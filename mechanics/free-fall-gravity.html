@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Free Fall & Gravity — Mere Teacher</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#0a0e1a;color:#e0e8ff;font-family:'Segoe UI',system-ui,sans-serif;min-height:100vh;overflow-x:hidden}
+header{background:linear-gradient(135deg,#1a1f35,#0d1227);border-bottom:1px solid #2a3560;padding:12px 20px;display:flex;align-items:center;gap:12px}
+header .logo{width:32px;height:32px;background:linear-gradient(135deg,#ff6b6b,#f59e0b);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px}
+header h1{font-size:15px;font-weight:600;color:#c8d8ff}
+header span{font-size:11px;color:#6b7cb0;margin-left:auto;background:#1e2540;padding:3px 10px;border-radius:20px;border:1px solid #2a3560}
+.canvas-wrap{position:relative;background:#080c18;border-bottom:1px solid #1e2540}
+canvas{display:block;width:100%}
+.hud{position:absolute;top:10px;left:10px;display:flex;gap:8px;flex-wrap:wrap}
+.hud-box{background:rgba(10,14,26,0.82);border:1px solid #2a3560;border-radius:8px;padding:5px 10px;font-size:11px}
+.hud-box .label{color:#6b7cb0;font-size:10px}.hud-box .value{color:#7eb8ff;font-weight:700;font-size:13px}
+.controls{padding:16px 16px 8px;background:#0d1122}
+.planet-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:12px}
+.planet-btn{padding:8px 4px;border:1px solid #2a3560;border-radius:8px;background:#1e2540;color:#8899cc;font-size:10px;cursor:pointer;text-align:center;transition:all .2s}
+.planet-btn.active{background:linear-gradient(135deg,#4f7cff22,#6e44cc22);border-color:#4f7cff;color:#7eb8ff}
+.planet-btn .g-val{font-size:12px;font-weight:700;color:#5de6b0;display:block}
+.control-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.control-item label{display:block;font-size:11px;color:#6b7cb0;margin-bottom:4px;letter-spacing:.5px;text-transform:uppercase}
+.control-item .val-row{display:flex;align-items:center;gap:8px;margin-bottom:4px}
+.control-item .val-row span{font-size:14px;font-weight:700;color:#7eb8ff;min-width:42px}
+input[type=range]{-webkit-appearance:none;width:100%;height:4px;background:#1e2a50;border-radius:2px;outline:none}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:16px;height:16px;background:linear-gradient(135deg,#4f7cff,#a855f7);border-radius:50%;cursor:pointer}
+.btn-row{display:flex;gap:10px;padding:12px 16px}
+button{flex:1;padding:11px;border:none;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer}
+button:active{transform:scale(.97);opacity:.85}
+#dropBtn{background:linear-gradient(135deg,#ff6b6b,#f59e0b);color:#fff}
+#resetBtn{background:#1e2540;color:#8899cc;border:1px solid #2a3560}
+.formula-section{margin:0 16px 16px;background:#0f1428;border:1px solid #1e2a50;border-radius:12px;overflow:hidden}
+.formula-section h3{font-size:12px;font-weight:600;color:#6b7cb0;text-transform:uppercase;letter-spacing:.8px;padding:10px 14px;background:#0d1222;border-bottom:1px solid #1e2a50}
+.formula-grid{display:grid;grid-template-columns:1fr 1fr}
+.formula-item{padding:10px 14px;border-bottom:1px solid #161e38;border-right:1px solid #161e38}
+.formula-item:nth-child(even){border-right:none}.formula-item:nth-last-child(-n+2){border-bottom:none}
+.f-label{font-size:10px;color:#4f5e88;margin-bottom:3px;text-transform:uppercase}
+.f-eq{font-size:12px;color:#a0c4ff;font-family:'Courier New',monospace}
+.f-val{font-size:13px;font-weight:700;color:#5de6b0;margin-top:2px}
+.obs-section{margin:0 16px 20px;background:#0f1428;border:1px solid #1e2a50;border-radius:12px;padding:12px 14px}
+.obs-section h3{font-size:12px;font-weight:600;color:#6b7cb0;text-transform:uppercase;letter-spacing:.8px;margin-bottom:10px}
+.obs-item{display:flex;align-items:flex-start;gap:8px;margin-bottom:7px;font-size:12px;color:#8899cc;line-height:1.5}
+.obs-item .dot{width:6px;height:6px;background:#ff6b6b;border-radius:50%;margin-top:5px;flex-shrink:0}
+.highlight{color:#7eb8ff;font-weight:600}
+#statusBar{text-align:center;font-size:11px;color:#4f5e88;padding:4px}
+</style>
+</head>
+<body>
+<header><div class="logo">🌍</div><h1>Free Fall & Gravity</h1><span>Class 9</span></header>
+<div class="canvas-wrap">
+  <canvas id="c"></canvas>
+  <div class="hud">
+    <div class="hud-box"><div class="label">Velocity</div><div class="value" id="hV">0 m/s</div></div>
+    <div class="hud-box"><div class="label">Distance</div><div class="value" id="hD">0 m</div></div>
+    <div class="hud-box"><div class="label">Time</div><div class="value" id="hT">0 s</div></div>
+  </div>
+  <div id="statusBar">Select a planet and drop the ball</div>
+</div>
+<div class="controls">
+  <div style="font-size:11px;color:#6b7cb0;text-transform:uppercase;letter-spacing:.5px;padding:0 0 8px">Select Planet</div>
+  <div class="planet-grid">
+    <div class="planet-btn active" data-g="9.8" data-name="Earth" onclick="selectPlanet(this)">🌍 Earth<span class="g-val">9.8</span>m/s²</div>
+    <div class="planet-btn" data-g="1.6" data-name="Moon" onclick="selectPlanet(this)">🌕 Moon<span class="g-val">1.6</span>m/s²</div>
+    <div class="planet-btn" data-g="3.7" data-name="Mars" onclick="selectPlanet(this)">🔴 Mars<span class="g-val">3.7</span>m/s²</div>
+    <div class="planet-btn" data-g="24.8" data-name="Jupiter" onclick="selectPlanet(this)">🟠 Jupiter<span class="g-val">24.8</span>m/s²</div>
+  </div>
+  <div class="control-grid">
+    <div class="control-item"><label>Drop Height (h)</label><div class="val-row"><span id="hVal">50</span><small>m</small></div><input type="range" id="hSlider" min="10" max="200" value="50" step="5"></div>
+    <div class="control-item"><label>Initial Velocity</label><div class="val-row"><span id="v0Val">0</span><small>m/s</small></div><input type="range" id="v0Slider" min="0" max="20" value="0" step="1"></div>
+  </div>
+</div>
+<div class="btn-row"><button id="dropBtn">▼ Drop Ball</button><button id="resetBtn">↺ Reset</button></div>
+<div class="formula-section"><h3>Formulas & Live Values</h3>
+<div class="formula-grid">
+  <div class="formula-item"><div class="f-label">Velocity</div><div class="f-eq">v = u + gt</div><div class="f-val" id="fV">—</div></div>
+  <div class="formula-item"><div class="f-label">Distance</div><div class="f-eq">s = ut + ½gt²</div><div class="f-val" id="fS">—</div></div>
+  <div class="formula-item"><div class="f-label">Time to fall</div><div class="f-eq">t = √(2h/g)</div><div class="f-val" id="fT">—</div></div>
+  <div class="formula-item"><div class="f-label">Impact velocity</div><div class="f-eq">v = √(2gh)</div><div class="f-val" id="fVf">—</div></div>
+</div></div>
+<div class="obs-section"><h3>Key Points</h3>
+  <div class="obs-item"><div class="dot"></div><span>All objects fall with the <span class="highlight">same acceleration g</span> regardless of mass (in vacuum).</span></div>
+  <div class="obs-item"><div class="dot"></div><span>g on Moon is <span class="highlight">1/6th of Earth</span>. Objects fall 6× slower on Moon.</span></div>
+  <div class="obs-item"><div class="dot"></div><span>Velocity increases linearly: <span class="highlight">v = gt</span>. Distance increases as t² — quadratic.</span></div>
+</div>
+<script>
+const canvas=document.getElementById('c'),ctx=canvas.getContext('2d');
+let g=9.8,h0=50,u=0,animId=null;
+let t_anim=0,ballY=0,vel=0,T_total=0,planet='Earth';
+const colors={Earth:'#4f7cff',Moon:'#aaaaaa',Mars:'#ff6b6b',Jupiter:'#f59e0b'};
+
+function resize(){const w=canvas.parentElement.clientWidth,H=Math.min(w*.55,260);canvas.width=w;canvas.height=H;}
+resize();window.addEventListener('resize',()=>{resize();draw();});
+
+function selectPlanet(el){document.querySelectorAll('.planet-btn').forEach(b=>b.classList.remove('active'));el.classList.add('active');g=parseFloat(el.dataset.g);planet=el.dataset.name;updateFormulas();draw();}
+function updateFormulas(){
+  const T=(-u+Math.sqrt(u*u+2*g*h0))/g;
+  const vf=Math.sqrt(u*u+2*g*h0);
+  T_total=T;
+  document.getElementById('fV').textContent=`v = ${u}+${g}t`;
+  document.getElementById('fS').textContent=`s = ${u}t + ½×${g}t²`;
+  document.getElementById('fT').textContent=T.toFixed(2)+' s';
+  document.getElementById('fVf').textContent=vf.toFixed(2)+' m/s';
+}
+function draw(ballFrac){
+  const W=canvas.width,H=canvas.height;
+  ctx.clearRect(0,0,W,H);
+  // Background stars
+  ctx.fillStyle='#1a2040';
+  const col=colors[planet]||'#4f7cff';
+  // Ground
+  ctx.fillStyle='#1e2a50';ctx.fillRect(0,H*.85,W,H*.15);
+  ctx.strokeStyle='#3a4e88';ctx.lineWidth=1.5;ctx.beginPath();ctx.moveTo(0,H*.85);ctx.lineTo(W,H*.85);ctx.stroke();
+  // Height indicator
+  const topY=H*.08,groundY=H*.85;
+  ctx.strokeStyle='#2a3a6a';ctx.lineWidth=1;ctx.setLineDash([4,4]);
+  ctx.beginPath();ctx.moveTo(W*.15,topY);ctx.lineTo(W*.15,groundY);ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.fillStyle='#4f5e88';ctx.font='9px sans-serif';ctx.fillText('h = '+h0+'m',W*.16,topY+12);
+  // Ball
+  const bf=ballFrac!==undefined?ballFrac:0;
+  const by=topY+(groundY-topY)*bf;
+  const grd=ctx.createRadialGradient(W*.5,by,0,W*.5,by,14);
+  grd.addColorStop(0,col);grd.addColorStop(1,col+'44');
+  ctx.beginPath();ctx.arc(W*.5,by,10,0,Math.PI*2);ctx.fillStyle=grd;ctx.fill();
+  ctx.strokeStyle='#fff';ctx.lineWidth=1;ctx.stroke();
+  // Velocity arrow
+  if(bf>0&&vel>0){
+    const arrowLen=Math.min(H*.2,vel*1.5);
+    ctx.beginPath();ctx.moveTo(W*.5,by+10);ctx.lineTo(W*.5,by+10+arrowLen);
+    ctx.strokeStyle='#5de6b0';ctx.lineWidth=2;ctx.stroke();
+    ctx.beginPath();ctx.moveTo(W*.5,by+10+arrowLen);ctx.lineTo(W*.5-5,by+10+arrowLen-8);ctx.lineTo(W*.5+5,by+10+arrowLen-8);ctx.closePath();
+    ctx.fillStyle='#5de6b0';ctx.fill();
+    ctx.fillStyle='#5de6b0';ctx.font='bold 9px sans-serif';ctx.textAlign='center';ctx.fillText(vel.toFixed(1)+' m/s',W*.5+25,by+10+arrowLen/2);ctx.textAlign='left';
+  }
+  // Planet label
+  ctx.fillStyle=col;ctx.font='bold 12px sans-serif';ctx.textAlign='center';
+  ctx.fillText(planet+' (g='+g+' m/s²)',W*.5,H*.93);ctx.textAlign='left';
+}
+function animate(){
+  const dt=0.016;t_anim+=dt;
+  const s=u*t_anim+0.5*g*t_anim*t_anim;
+  vel=u+g*t_anim;
+  const frac=Math.min(s/h0,1);
+  draw(frac);
+  document.getElementById('hV').textContent=vel.toFixed(2)+' m/s';
+  document.getElementById('hD').textContent=s.toFixed(2)+' m';
+  document.getElementById('hT').textContent=t_anim.toFixed(2)+' s';
+  document.getElementById('statusBar').textContent=`Falling on ${planet}  |  v = ${vel.toFixed(2)} m/s  |  s = ${s.toFixed(2)} m`;
+  if(frac<1)animId=requestAnimationFrame(animate);
+  else{document.getElementById('statusBar').textContent=`Landed on ${planet}! Impact velocity = ${vel.toFixed(2)} m/s`;}
+}
+document.getElementById('hSlider').addEventListener('input',function(){h0=parseFloat(this.value);document.getElementById('hVal').textContent=this.value;updateFormulas();draw();});
+document.getElementById('v0Slider').addEventListener('input',function(){u=parseFloat(this.value);document.getElementById('v0Val').textContent=this.value;updateFormulas();draw();});
+document.getElementById('dropBtn').addEventListener('click',()=>{if(animId)cancelAnimationFrame(animId);t_anim=0;vel=u;updateFormulas();animate();});
+document.getElementById('resetBtn').addEventListener('click',()=>{if(animId)cancelAnimationFrame(animId);t_anim=0;vel=0;document.getElementById('hV').textContent='0 m/s';document.getElementById('hD').textContent='0 m';document.getElementById('hT').textContent='0 s';document.getElementById('statusBar').textContent='Select a planet and drop the ball';draw();});
+updateFormulas();draw();
+</script>
+</body>
+</html>

@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Circular Motion - Mere Teacher</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: #0a0e1a; color: #e0e6ff; font-family: 'Segoe UI', sans-serif; min-height: 100vh; }
+  .header { display: flex; align-items: center; padding: 18px 24px; background: rgba(79,124,255,0.08);
+    border-bottom: 1px solid rgba(79,124,255,0.2); position: relative; }
+  .logo { font-size: 2rem; margin-right: 14px; }
+  .title-block h1 { font-size: 1.4rem; color: #4f7cff; font-weight: 700; }
+  .title-block p { font-size: 0.8rem; color: #8899cc; margin-top: 2px; }
+  .badge { position: absolute; right: 24px; top: 50%; transform: translateY(-50%);
+    background: rgba(79,124,255,0.18); border: 1px solid #4f7cff; color: #4f7cff;
+    padding: 4px 14px; border-radius: 20px; font-size: 0.78rem; font-weight: 600; }
+  .main { padding: 20px 24px; max-width: 900px; margin: 0 auto; }
+  .canvas-wrap { position: relative; background: rgba(255,255,255,0.03); border-radius: 16px;
+    border: 1px solid rgba(79,124,255,0.15); overflow: hidden; margin-bottom: 20px; }
+  canvas { display: block; width: 100%; }
+  .hud { position: absolute; top: 14px; right: 14px; background: rgba(10,14,26,0.88);
+    border: 1px solid rgba(93,230,176,0.3); border-radius: 12px; padding: 12px 18px; min-width: 170px; }
+  .hud-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 7px; }
+  .hud-row:last-child { margin-bottom: 0; }
+  .hud-label { font-size: 0.75rem; color: #8899cc; }
+  .hud-val { font-size: 1.0rem; font-weight: 700; color: #5de6b0; font-family: monospace; }
+  .controls { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; margin-bottom: 20px; }
+  .slider-card { background: rgba(255,255,255,0.04); border: 1px solid rgba(79,124,255,0.15);
+    border-radius: 12px; padding: 14px; }
+  .slider-card label { font-size: 0.8rem; color: #8899cc; display: block; margin-bottom: 8px; }
+  .slider-card .val-display { font-size: 1.1rem; font-weight: 700; color: #4f7cff; margin-bottom: 8px; }
+  input[type=range] { width: 100%; accent-color: #4f7cff; cursor: pointer; }
+  .formula-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px; }
+  .formula-card { background: rgba(79,124,255,0.07); border: 1px solid rgba(79,124,255,0.2);
+    border-radius: 12px; padding: 14px 18px; text-align: center; }
+  .formula-card .formula { font-size: 1.05rem; color: #5de6b0; font-family: monospace; font-weight: 700; }
+  .formula-card .fname { font-size: 0.72rem; color: #8899cc; margin-top: 4px; }
+  .keypoints { background: rgba(93,230,176,0.05); border: 1px solid rgba(93,230,176,0.2);
+    border-radius: 12px; padding: 16px 20px; }
+  .keypoints h3 { font-size: 0.9rem; color: #5de6b0; margin-bottom: 10px; }
+  .keypoints ul { list-style: none; }
+  .keypoints li { font-size: 0.82rem; color: #b0bedd; padding: 4px 0; padding-left: 18px; position: relative; }
+  .keypoints li::before { content: '▸'; position: absolute; left: 0; color: #4f7cff; }
+</style>
+</head>
+<body>
+<div class="header">
+  <div class="logo">🔄</div>
+  <div class="title-block">
+    <h1>Circular Motion</h1>
+    <p>Mere Teacher — Interactive Physics Lab</p>
+  </div>
+  <div class="badge">Class 11</div>
+</div>
+<div class="main">
+  <div class="canvas-wrap">
+    <canvas id="c" height="300"></canvas>
+    <div class="hud">
+      <div class="hud-row"><span class="hud-label">Force Fc</span><span class="hud-val" id="hudFc">—</span></div>
+      <div class="hud-row"><span class="hud-label">Angular ω</span><span class="hud-val" id="hudW">—</span></div>
+      <div class="hud-row"><span class="hud-label">Period T</span><span class="hud-val" id="hudT">—</span></div>
+      <div class="hud-row"><span class="hud-label">Accel ac</span><span class="hud-val" id="hudAc">—</span></div>
+    </div>
+  </div>
+  <div class="controls">
+    <div class="slider-card">
+      <label>Speed v (m/s)</label>
+      <div class="val-display" id="vDisp">8 m/s</div>
+      <input type="range" id="sV" min="1" max="20" value="8" step="0.5">
+    </div>
+    <div class="slider-card">
+      <label>Radius r (m)</label>
+      <div class="val-display" id="rDisp">4 m</div>
+      <input type="range" id="sR" min="1" max="10" value="4" step="0.5">
+    </div>
+    <div class="slider-card">
+      <label>Mass m (kg)</label>
+      <div class="val-display" id="mDisp">5 kg</div>
+      <input type="range" id="sM" min="1" max="20" value="5" step="1">
+    </div>
+  </div>
+  <div class="formula-grid">
+    <div class="formula-card"><div class="formula">Fc = mv² / r</div><div class="fname">Centripetal Force</div></div>
+    <div class="formula-card"><div class="formula">ω = v / r</div><div class="fname">Angular velocity (rad/s)</div></div>
+    <div class="formula-card"><div class="formula">T = 2πr / v</div><div class="fname">Time Period (s)</div></div>
+    <div class="formula-card"><div class="formula">ac = v² / r</div><div class="fname">Centripetal Acceleration</div></div>
+  </div>
+  <div class="keypoints">
+    <h3>KEY POINTS</h3>
+    <ul>
+      <li>Centripetal force always points toward the center — it changes direction, not speed.</li>
+      <li>No work is done by centripetal force since it is perpendicular to velocity at all times.</li>
+      <li>Banking formula: tan θ = v²/(rg) — allows safe turning without friction.</li>
+      <li>Centrifugal force is a pseudo-force in the rotating frame; it does NOT exist inertially.</li>
+      <li>For vertical circle: min speed at top = √(rg) to maintain contact.</li>
+    </ul>
+  </div>
+</div>
+<script>
+const canvas = document.getElementById('c');
+const ctx = canvas.getContext('2d');
+let angle = 0, lastTS = 0;
+let trail = [];
+
+function getVals() {
+  const v = parseFloat(document.getElementById('sV').value);
+  const r = parseFloat(document.getElementById('sR').value);
+  const m = parseFloat(document.getElementById('sM').value);
+  const omega = v / r;
+  const T = 2 * Math.PI * r / v;
+  const Fc = m * v * v / r;
+  const ac = v * v / r;
+  return { v, r, m, omega, T, Fc, ac };
+}
+
+function resize() { canvas.width = canvas.offsetWidth; }
+resize();
+window.addEventListener('resize', () => { resize(); trail = []; });
+
+function drawArrow(x1, y1, x2, y2, color, width, label) {
+  ctx.save();
+  ctx.strokeStyle = color; ctx.lineWidth = width || 2;
+  ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke();
+  const ang = Math.atan2(y2 - y1, x2 - x1);
+  const hs = 10;
+  ctx.fillStyle = color;
+  ctx.beginPath();
+  ctx.moveTo(x2, y2);
+  ctx.lineTo(x2 - hs * Math.cos(ang - 0.4), y2 - hs * Math.sin(ang - 0.4));
+  ctx.lineTo(x2 - hs * Math.cos(ang + 0.4), y2 - hs * Math.sin(ang + 0.4));
+  ctx.closePath(); ctx.fill();
+  if (label) {
+    ctx.font = 'bold 11px Segoe UI'; ctx.fillStyle = color;
+    ctx.fillText(label, x2 + 6, y2 + 4);
+  }
+  ctx.restore();
+}
+
+function frame(ts) {
+  const dt = Math.min((ts - lastTS) / 1000, 0.04);
+  lastTS = ts;
+
+  const { v, r, m, omega, T, Fc, ac } = getVals();
+  angle += omega * dt;
+
+  const w = canvas.width, h = canvas.height;
+  const cx = w * 0.42, cy = h * 0.5;
+  const maxR = Math.min(w * 0.3, h * 0.38, 130);
+  const scale = maxR / 10;
+  const radiusPx = r * scale;
+
+  const bx = cx + radiusPx * Math.cos(angle);
+  const by = cy + radiusPx * Math.sin(angle);
+
+  ctx.clearRect(0, 0, w, h);
+
+  // Glow ring
+  const grd = ctx.createRadialGradient(cx, cy, radiusPx - 6, cx, cy, radiusPx + 6);
+  grd.addColorStop(0, 'rgba(79,124,255,0.35)');
+  grd.addColorStop(1, 'rgba(79,124,255,0)');
+  ctx.beginPath(); ctx.arc(cx, cy, radiusPx, 0, Math.PI * 2);
+  ctx.strokeStyle = grd; ctx.lineWidth = 12; ctx.stroke();
+
+  // Main circle
+  ctx.beginPath(); ctx.arc(cx, cy, radiusPx, 0, Math.PI * 2);
+  ctx.strokeStyle = 'rgba(79,124,255,0.5)'; ctx.lineWidth = 2; ctx.stroke();
+
+  // Trail
+  trail.push({ x: bx, y: by });
+  if (trail.length > 60) trail.shift();
+  for (let i = 1; i < trail.length; i++) {
+    const alpha = i / trail.length * 0.5;
+    ctx.beginPath();
+    ctx.arc(trail[i].x, trail[i].y, 3, 0, Math.PI * 2);
+    ctx.fillStyle = `rgba(93,230,176,${alpha})`;
+    ctx.fill();
+  }
+
+  // Radius line
+  ctx.setLineDash([5, 4]);
+  ctx.strokeStyle = 'rgba(255,221,87,0.4)'; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(bx, by); ctx.stroke();
+  ctx.setLineDash([]);
+
+  // Center dot
+  ctx.beginPath(); ctx.arc(cx, cy, 5, 0, Math.PI * 2);
+  ctx.fillStyle = '#ffdd57'; ctx.fill();
+  ctx.fillStyle = '#ffdd57aa'; ctx.font = '10px monospace';
+  ctx.fillText('O', cx + 6, cy - 6);
+
+  // Centripetal force arrow (toward center)
+  const forceLen = Math.min(Fc / 50 * 50, 60);
+  const toCx = cx - bx, toCy = cy - by;
+  const dist = Math.sqrt(toCx * toCx + toCy * toCy);
+  const nx = toCx / dist, ny = toCy / dist;
+  drawArrow(bx, by, bx + nx * forceLen, by + ny * forceLen, '#ff7a59', 2.5, 'Fc');
+
+  // Velocity arrow (tangential)
+  const velLen = Math.min(v * 5, 65);
+  const tx = -Math.sin(angle), ty = Math.cos(angle);
+  drawArrow(bx, by, bx + tx * velLen, by + ty * velLen, '#5de6b0', 2.5, 'v');
+
+  // Ball
+  const ballGrd = ctx.createRadialGradient(bx - 4, by - 4, 2, bx, by, 16);
+  ballGrd.addColorStop(0, 'rgba(93,230,176,0.9)');
+  ballGrd.addColorStop(1, 'rgba(79,124,255,0.6)');
+  ctx.beginPath(); ctx.arc(bx, by, 16, 0, Math.PI * 2);
+  ctx.fillStyle = ballGrd; ctx.fill();
+  ctx.strokeStyle = '#5de6b0'; ctx.lineWidth = 2; ctx.stroke();
+
+  // Radius label
+  ctx.fillStyle = '#ffdd57'; ctx.font = '11px Segoe UI';
+  const midRx = (cx + bx) / 2, midRy = (cy + by) / 2;
+  ctx.fillText('r=' + r + 'm', midRx + 4, midRy - 6);
+
+  // Info panel on right
+  const px = w * 0.72, py = h * 0.18;
+  ctx.fillStyle = 'rgba(79,124,255,0.06)';
+  ctx.strokeStyle = 'rgba(79,124,255,0.15)'; ctx.lineWidth = 1;
+  const pw = w * 0.25, ph = h * 0.55;
+  ctx.beginPath();
+  ctx.roundRect(px, py, pw, ph, 10);
+  ctx.fill(); ctx.stroke();
+
+  ctx.fillStyle = '#8899cc'; ctx.font = '11px Segoe UI';
+  ctx.fillText('MOTION INFO', px + 14, py + 20);
+
+  const lines = [
+    ['v', v.toFixed(1) + ' m/s', '#5de6b0'],
+    ['r', r.toFixed(1) + ' m', '#4f7cff'],
+    ['m', m.toFixed(0) + ' kg', '#4f7cff'],
+    ['ω', omega.toFixed(2) + ' r/s', '#ffdd57'],
+    ['T', T.toFixed(2) + ' s', '#ffdd57'],
+    ['Fc', Fc.toFixed(1) + ' N', '#ff7a59'],
+    ['ac', ac.toFixed(2) + ' m/s²', '#ff7a59'],
+  ];
+  lines.forEach(([label, val, col], i) => {
+    const ly = py + 42 + i * 28;
+    ctx.fillStyle = '#8899cc'; ctx.font = '11px monospace';
+    ctx.fillText(label, px + 14, ly);
+    ctx.fillStyle = col; ctx.font = 'bold 13px monospace';
+    ctx.fillText(val, px + 40, ly);
+  });
+
+  // HUD update
+  document.getElementById('hudFc').textContent = Fc.toFixed(1) + ' N';
+  document.getElementById('hudW').textContent = omega.toFixed(2) + ' r/s';
+  document.getElementById('hudT').textContent = T.toFixed(2) + ' s';
+  document.getElementById('hudAc').textContent = ac.toFixed(2) + ' m/s²';
+  document.getElementById('vDisp').textContent = v.toFixed(1) + ' m/s';
+  document.getElementById('rDisp').textContent = r.toFixed(1) + ' m';
+  document.getElementById('mDisp').textContent = m.toFixed(0) + ' kg';
+
+  requestAnimationFrame(frame);
+}
+
+['sV','sR','sM'].forEach(id => {
+  document.getElementById(id).addEventListener('input', () => { trail = []; });
+});
+
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>

@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Young's Double Slit – Mere Teacher</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:#0a0e1a;color:#e0e6f0;font-family:'Segoe UI',sans-serif;min-height:100vh;padding:16px;}
+.header{display:flex;align-items:center;gap:10px;margin-bottom:14px;}
+.logo{font-size:22px;}
+.title{font-size:18px;font-weight:600;color:#fff;}
+.badge{background:#4f7cff22;border:1px solid #4f7cff55;color:#4f7cff;font-size:11px;padding:3px 9px;border-radius:20px;font-weight:600;}
+canvas{width:100%;border-radius:12px;background:#060a14;display:block;margin-bottom:14px;}
+.controls{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;}
+.ctrl{background:#0d1325;border:1px solid #1e2a45;border-radius:10px;padding:12px;}
+.ctrl label{font-size:12px;color:#8899bb;display:block;margin-bottom:6px;}
+.ctrl .val{font-weight:700;float:right;}
+input[type=range]{width:100%;accent-color:#4f7cff;height:4px;cursor:pointer;}
+.hud{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:10px;}
+.hud-card{background:#0d1325;border:1px solid #1e2a45;border-radius:10px;padding:10px 12px;}
+.hud-card .label{font-size:11px;color:#8899bb;margin-bottom:4px;}
+.hud-card .value{font-size:15px;font-weight:700;color:#5de6b0;}
+.formulas{background:#0d1325;border:1px solid #1e2a45;border-radius:10px;padding:12px;margin-bottom:10px;}
+.formulas h3{font-size:12px;color:#8899bb;margin-bottom:8px;text-transform:uppercase;letter-spacing:0.5px;}
+.formula-row{font-size:12px;color:#c8d8f0;margin-bottom:4px;font-family:monospace;}
+.keypoints{background:#0d1325;border:1px solid #5de6b022;border-radius:10px;padding:12px;}
+.keypoints h3{font-size:12px;color:#5de6b0;margin-bottom:8px;text-transform:uppercase;letter-spacing:0.5px;}
+.kp{font-size:12px;color:#c8d8f0;margin-bottom:4px;padding-left:10px;border-left:2px solid #5de6b055;}
+</style>
+</head>
+<body>
+<div class="header">
+  <span class="logo">&#127752;</span>
+  <span class="title">Young's Double Slit</span>
+  <span class="badge">Class 12</span>
+</div>
+<canvas id="canvas" height="360"></canvas>
+<div class="controls">
+  <div class="ctrl" style="grid-column:1/-1">
+    <label>Wavelength λ <span class="val" id="lval" style="color:#ff6688">550 nm</span></label>
+    <input type="range" id="lam" min="400" max="700" step="5" value="550">
+  </div>
+  <div class="ctrl">
+    <label>Slit sep d <span class="val" id="dval" style="color:#4f7cff">0.5 mm</span></label>
+    <input type="range" id="slitd" min="0.1" max="2" step="0.05" value="0.5">
+  </div>
+  <div class="ctrl">
+    <label>Screen dist D <span class="val" id="Dval" style="color:#5de6b0">1.0 m</span></label>
+    <input type="range" id="scrD" min="0.5" max="2" step="0.05" value="1.0">
+  </div>
+</div>
+<div class="hud">
+  <div class="hud-card">
+    <div class="label">Fringe width β</div>
+    <div class="value" id="hud-beta">–</div>
+  </div>
+  <div class="hud-card">
+    <div class="label">y₁ (n=1)</div>
+    <div class="value" id="hud-y1">–</div>
+  </div>
+  <div class="hud-card">
+    <div class="label">y₂ (n=2)</div>
+    <div class="value" id="hud-y2">–</div>
+  </div>
+</div>
+<div class="formulas">
+  <h3>Formulas</h3>
+  <div class="formula-row">β = λD / d</div>
+  <div class="formula-row">yₙ = nλD / d</div>
+  <div class="formula-row">Δx = d·sinθ ≈ d·y/D</div>
+  <div class="formula-row">Constructive: Δx = nλ</div>
+</div>
+<div class="keypoints">
+  <h3>Key Points</h3>
+  <div class="kp">Central bright fringe always at y = 0</div>
+  <div class="kp">Fringe width β increases with λ and D</div>
+  <div class="kp">Fringe width β decreases with slit separation d</div>
+</div>
+</body>
+</html>
+<script>
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+
+function wavelengthToRGB(wl) {
+  let r,g,b;
+  if (wl>=380&&wl<440){r=(440-wl)/(440-380);g=0;b=1;}
+  else if(wl>=440&&wl<490){r=0;g=(wl-440)/(490-440);b=1;}
+  else if(wl>=490&&wl<510){r=0;g=1;b=(510-wl)/(510-490);}
+  else if(wl>=510&&wl<580){r=(wl-510)/(580-510);g=1;b=0;}
+  else if(wl>=580&&wl<645){r=1;g=(645-wl)/(645-580);b=0;}
+  else if(wl>=645&&wl<=780){r=1;g=0;b=0;}
+  else{r=0;g=0;b=0;}
+  return [Math.round(r*255),Math.round(g*255),Math.round(b*255)];
+}
+
+function getParams() {
+  return {
+    lam: parseFloat(document.getElementById('lam').value) * 1e-9,
+    d: parseFloat(document.getElementById('slitd').value) * 1e-3,
+    D: parseFloat(document.getElementById('scrD').value)
+  };
+}
+
+function updateLabels() {
+  const lv = parseFloat(document.getElementById('lam').value);
+  const [r,g,b] = wavelengthToRGB(lv);
+  const col = `rgb(${r},${g},${b})`;
+  document.getElementById('lval').textContent = lv + ' nm';
+  document.getElementById('lval').style.color = col;
+  document.getElementById('dval').textContent = parseFloat(document.getElementById('slitd').value).toFixed(2) + ' mm';
+  document.getElementById('Dval').textContent = parseFloat(document.getElementById('scrD').value).toFixed(1) + ' m';
+}
+
+function updateHUD(lam, d, D) {
+  const beta = (lam * D / d) * 1000;
+  document.getElementById('hud-beta').textContent = beta.toFixed(2) + ' mm';
+  document.getElementById('hud-y1').textContent = beta.toFixed(2) + ' mm';
+  document.getElementById('hud-y2').textContent = (2*beta).toFixed(2) + ' mm';
+}
+
+function drawSetup(ctx, W, topH) {
+  ctx.fillStyle = '#060a14';
+  ctx.fillRect(0, 0, W, topH);
+  ctx.strokeStyle = '#1e2a45';
+  ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(0, topH); ctx.lineTo(W, topH); ctx.stroke();
+
+  const slitX = W * 0.28;
+  const screenX = W * 0.82;
+  const cy = topH / 2;
+  const slitGap = 18;
+
+  ctx.strokeStyle = '#4f7cff44';
+  ctx.lineWidth = 1;
+  ctx.setLineDash([4,4]);
+  ctx.beginPath(); ctx.moveTo(W*0.08, cy); ctx.lineTo(slitX, cy); ctx.stroke();
+  ctx.setLineDash([]);
+
+  ctx.strokeStyle = '#4f7cff';
+  ctx.lineWidth = 2.5;
+  ctx.beginPath(); ctx.moveTo(slitX, 8); ctx.lineTo(slitX, cy - slitGap); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(slitX, cy + slitGap); ctx.lineTo(slitX, topH - 8); ctx.stroke();
+
+  ctx.strokeStyle = '#5de6b0';
+  ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.moveTo(screenX, 8); ctx.lineTo(screenX, topH - 8); ctx.stroke();
+
+  ctx.strokeStyle = '#4f7cff33';
+  ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(slitX, cy - slitGap); ctx.lineTo(screenX, cy - 30); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(slitX, cy - slitGap); ctx.lineTo(screenX, cy); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(slitX, cy + slitGap); ctx.lineTo(screenX, cy + 30); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(slitX, cy + slitGap); ctx.lineTo(screenX, cy); ctx.stroke();
+
+  ctx.fillStyle = '#8899bb';
+  ctx.font = '11px Segoe UI';
+  ctx.textAlign = 'center';
+  ctx.fillText('Source', W*0.08, cy + 16);
+  ctx.fillText('Slits', slitX, topH - 2);
+  ctx.fillText('Screen', screenX, topH - 2);
+
+  ctx.fillStyle = '#ff4488';
+  ctx.beginPath(); ctx.arc(W*0.08, cy, 5, 0, Math.PI*2); ctx.fill();
+}
+
+function drawFringes(ctx, W, topH, totalH, lam, d, D) {
+  const fringeH = totalH - topH;
+  const cy = topH + fringeH / 2;
+  const beta = lam * D / d;
+  const maxY = fringeH * 0.5;
+  const [r,g,b] = wavelengthToRGB(lam * 1e9);
+
+  for (let py = 0; py < fringeH; py++) {
+    const y = ((py / fringeH) - 0.5) * maxY * 2;
+    const delta = d * y / D;
+    const phase = (2 * Math.PI / lam) * delta;
+    const intensity = Math.cos(phase / 2) ** 2;
+    ctx.fillStyle = `rgba(${r},${g},${b},${(intensity * 0.92).toFixed(3)})`;
+    ctx.fillRect(60, topH + py, W - 120, 1);
+  }
+
+  ctx.strokeStyle = '#1e2a45';
+  ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(0, topH); ctx.lineTo(W, topH); ctx.stroke();
+  ctx.strokeStyle = '#ffffff33';
+  ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(59, topH); ctx.lineTo(59, totalH); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(W-59, topH); ctx.lineTo(W-59, totalH); ctx.stroke();
+
+  ctx.fillStyle = '#8899bb';
+  ctx.font = '11px Segoe UI';
+  ctx.textAlign = 'left';
+  ctx.fillText('Intensity pattern', 64, topH + 14);
+
+  ctx.strokeStyle = '#ffffff55';
+  ctx.lineWidth = 1;
+  ctx.setLineDash([3,3]);
+  ctx.beginPath(); ctx.moveTo(59, cy); ctx.lineTo(W-59, cy); ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.fillStyle = '#ffffff99';
+  ctx.font = '10px Segoe UI';
+  ctx.textAlign = 'left';
+  ctx.fillText('n=0', 62, cy - 3);
+}
+
+function draw() {
+  const W = canvas.clientWidth * (window.devicePixelRatio || 1) || 360;
+  const totalH = 360;
+  const topH = 160;
+  canvas.width = W;
+  canvas.height = totalH;
+  ctx.clearRect(0, 0, W, totalH);
+
+  const {lam, d, D} = getParams();
+  drawSetup(ctx, W, topH);
+  drawFringes(ctx, W, topH, totalH, lam, d, D);
+  updateHUD(lam, d, D);
+}
+
+['lam','slitd','scrD'].forEach(id => {
+  document.getElementById(id).addEventListener('input', () => { updateLabels(); draw(); });
+});
+updateLabels();
+draw();
+window.addEventListener('resize', draw);
+</script>

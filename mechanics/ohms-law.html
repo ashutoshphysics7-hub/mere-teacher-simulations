@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ohm's Law - Mere Teacher</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: #0a0e1a; color: #e0e6ff; font-family: 'Segoe UI', sans-serif; min-height: 100vh; }
+  .header { display: flex; align-items: center; padding: 18px 24px; background: rgba(79,124,255,0.08);
+    border-bottom: 1px solid rgba(79,124,255,0.2); position: relative; }
+  .logo { font-size: 2rem; margin-right: 14px; }
+  .title-block h1 { font-size: 1.4rem; color: #4f7cff; font-weight: 700; }
+  .title-block p { font-size: 0.8rem; color: #8899cc; margin-top: 2px; }
+  .badge { position: absolute; right: 24px; top: 50%; transform: translateY(-50%);
+    background: rgba(79,124,255,0.18); border: 1px solid #4f7cff; color: #4f7cff;
+    padding: 4px 14px; border-radius: 20px; font-size: 0.78rem; font-weight: 600; }
+  .main { padding: 20px 24px; max-width: 900px; margin: 0 auto; }
+  .canvas-wrap { position: relative; background: rgba(255,255,255,0.03); border-radius: 16px;
+    border: 1px solid rgba(79,124,255,0.15); overflow: hidden; margin-bottom: 20px; }
+  canvas { display: block; width: 100%; }
+  .hud { position: absolute; top: 14px; right: 14px; background: rgba(10,14,26,0.88);
+    border: 1px solid rgba(93,230,176,0.3); border-radius: 12px; padding: 12px 18px;
+    min-width: 160px; }
+  .hud-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 7px; }
+  .hud-row:last-child { margin-bottom: 0; }
+  .hud-label { font-size: 0.75rem; color: #8899cc; }
+  .hud-val { font-size: 1.05rem; font-weight: 700; color: #5de6b0; font-family: monospace; }
+  .controls { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px; }
+  .slider-card { background: rgba(255,255,255,0.04); border: 1px solid rgba(79,124,255,0.15);
+    border-radius: 12px; padding: 16px; }
+  .slider-card label { font-size: 0.82rem; color: #8899cc; display: block; margin-bottom: 8px; }
+  .slider-card .val-display { font-size: 1.2rem; font-weight: 700; color: #4f7cff; margin-bottom: 10px; }
+  input[type=range] { width: 100%; accent-color: #4f7cff; cursor: pointer; }
+  .formula-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px; }
+  .formula-card { background: rgba(79,124,255,0.07); border: 1px solid rgba(79,124,255,0.2);
+    border-radius: 12px; padding: 14px 18px; text-align: center; }
+  .formula-card .formula { font-size: 1.15rem; color: #5de6b0; font-family: monospace; font-weight: 700; }
+  .formula-card .fname { font-size: 0.72rem; color: #8899cc; margin-top: 4px; }
+  .keypoints { background: rgba(93,230,176,0.05); border: 1px solid rgba(93,230,176,0.2);
+    border-radius: 12px; padding: 16px 20px; }
+  .keypoints h3 { font-size: 0.9rem; color: #5de6b0; margin-bottom: 10px; letter-spacing: 0.05em; }
+  .keypoints ul { list-style: none; }
+  .keypoints li { font-size: 0.82rem; color: #b0bedd; padding: 4px 0; padding-left: 18px; position: relative; }
+  .keypoints li::before { content: '▸'; position: absolute; left: 0; color: #4f7cff; }
+</style>
+</head>
+<body>
+<div class="header">
+  <div class="logo">⚡</div>
+  <div class="title-block">
+    <h1>Ohm's Law</h1>
+    <p>Mere Teacher — Interactive Physics Lab</p>
+  </div>
+  <div class="badge">Class 10</div>
+</div>
+<div class="main">
+  <div class="canvas-wrap">
+    <canvas id="c" height="260"></canvas>
+    <div class="hud">
+      <div class="hud-row"><span class="hud-label">Current I</span><span class="hud-val" id="hudI">—</span></div>
+      <div class="hud-row"><span class="hud-label">Power P</span><span class="hud-val" id="hudP">—</span></div>
+      <div class="hud-row"><span class="hud-label">Energy/s</span><span class="hud-val" id="hudE">—</span></div>
+    </div>
+  </div>
+  <div class="controls">
+    <div class="slider-card">
+      <label>Voltage V (Volts)</label>
+      <div class="val-display" id="vDisp">12 V</div>
+      <input type="range" id="sV" min="1" max="24" value="12" step="0.5">
+    </div>
+    <div class="slider-card">
+      <label>Resistance R (Ohms)</label>
+      <div class="val-display" id="rDisp">40 Ω</div>
+      <input type="range" id="sR" min="1" max="100" value="40" step="1">
+    </div>
+  </div>
+  <div class="formula-grid">
+    <div class="formula-card"><div class="formula">I = V / R</div><div class="fname">Current (Amperes)</div></div>
+    <div class="formula-card"><div class="formula">P = V² / R</div><div class="fname">Power (Watts)</div></div>
+    <div class="formula-card"><div class="formula">P = I² × R</div><div class="fname">Power dissipation</div></div>
+    <div class="formula-card"><div class="formula">R = V / I</div><div class="fname">Resistance (Ohms)</div></div>
+  </div>
+  <div class="keypoints">
+    <h3>KEY POINTS</h3>
+    <ul>
+      <li>Ohm's Law: V = IR — V vs I graph is a straight line through origin for ohmic conductors.</li>
+      <li>In series circuits, total R = R₁ + R₂ + … ; current is same through all components.</li>
+      <li>In parallel circuits, 1/R = 1/R₁ + 1/R₂ + … ; voltage is same across all components.</li>
+      <li>Power dissipated as heat in resistor: P = I²R (Joule heating).</li>
+      <li>Higher resistance at same voltage → lower current but more heat per unit current.</li>
+    </ul>
+  </div>
+</div>
+<script>
+const canvas = document.getElementById('c');
+const ctx = canvas.getContext('2d');
+const sV = document.getElementById('sV');
+const sR = document.getElementById('sR');
+let dots = [];
+let animFrame;
+
+function resize() {
+  canvas.width = canvas.offsetWidth;
+}
+resize();
+window.addEventListener('resize', () => { resize(); });
+
+function getVals() {
+  const V = parseFloat(sV.value);
+  const R = parseFloat(sR.value);
+  const I = V / R;
+  const P = V * V / R;
+  return { V, R, I, P };
+}
+
+function updateHUD() {
+  const { I, P } = getVals();
+  document.getElementById('hudI').textContent = I.toFixed(3) + ' A';
+  document.getElementById('hudP').textContent = P.toFixed(2) + ' W';
+  document.getElementById('hudE').textContent = P.toFixed(2) + ' J/s';
+  document.getElementById('vDisp').textContent = sV.value + ' V';
+  document.getElementById('rDisp').textContent = sR.value + ' Ω';
+}
+
+// Circuit path points (normalized 0-1)
+function circuitPath(w, h) {
+  const pad = 40, mid = h / 2;
+  const battX = pad + 20, battY = mid;
+  return [
+    [pad + 20, mid],           // battery left
+    [pad + 20, pad],           // top-left
+    [w - pad, pad],            // top-right
+    [w - pad, mid + 30],       // right side (ammeter center)
+    [w - pad, h - pad],        // bottom-right
+    [pad + 20, h - pad],       // bottom-left
+    [pad + 20, mid]            // back to battery
+  ];
+}
+
+function lerpPath(path, t) {
+  const totalSegs = path.length - 1;
+  const totalLen = path.reduce((acc, p, i) => {
+    if (i === 0) return acc;
+    const dx = p[0] - path[i-1][0], dy = p[1] - path[i-1][1];
+    return acc + Math.sqrt(dx*dx + dy*dy);
+  }, 0);
+  const target = t * totalLen;
+  let run = 0;
+  for (let i = 1; i < path.length; i++) {
+    const dx = path[i][0] - path[i-1][0], dy = path[i][1] - path[i-1][1];
+    const len = Math.sqrt(dx*dx + dy*dy);
+    if (run + len >= target) {
+      const frac = (target - run) / len;
+      return [path[i-1][0] + dx * frac, path[i-1][1] + dy * frac];
+    }
+    run += len;
+  }
+  return path[path.length - 1];
+}
+
+function initDots(count) {
+  dots = [];
+  for (let i = 0; i < count; i++) {
+    dots.push({ t: i / count });
+  }
+}
+
+let lastTime = 0;
+function draw(ts) {
+  const dt = Math.min((ts - lastTime) / 1000, 0.05);
+  lastTime = ts;
+  const { V, R, I } = getVals();
+  const w = canvas.width, h = canvas.height;
+  const path = circuitPath(w, h);
+  const speed = Math.min(I / 5, 1) * 0.18 + 0.01;
+
+  ctx.clearRect(0, 0, w, h);
+
+  // Draw circuit wire
+  ctx.beginPath();
+  ctx.moveTo(path[0][0], path[0][1]);
+  for (let i = 1; i < path.length; i++) ctx.lineTo(path[i][0], path[i][1]);
+  ctx.strokeStyle = 'rgba(79,124,255,0.35)';
+  ctx.lineWidth = 3;
+  ctx.stroke();
+
+  // Battery symbol
+  const bx = path[0][0], by = path[0][1];
+  ctx.fillStyle = '#4f7cff';
+  ctx.font = 'bold 13px Segoe UI';
+  ctx.fillText('BATTERY', bx - 28, by + 30);
+  ctx.strokeStyle = '#5de6b0'; ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.moveTo(bx - 10, by - 14); ctx.lineTo(bx - 10, by + 14); ctx.stroke();
+  ctx.lineWidth = 4;
+  ctx.beginPath(); ctx.moveTo(bx + 10, by - 8); ctx.lineTo(bx + 10, by + 8); ctx.stroke();
+  ctx.lineWidth = 2;
+  // + / - labels
+  ctx.fillStyle = '#5de6b0'; ctx.font = 'bold 14px monospace';
+  ctx.fillText('+', bx + 14, by - 10);
+  ctx.fillText('−', bx - 22, by - 10);
+
+  // Voltage label
+  ctx.fillStyle = '#ffdd57'; ctx.font = 'bold 13px Segoe UI';
+  ctx.fillText(V + ' V', bx - 14, by + 48);
+
+  // Resistor (rectangle on top path segment)
+  const rx1 = (path[1][0] + path[2][0]) / 2 - 40;
+  const rx2 = rx1 + 80;
+  const ry = path[1][1];
+  ctx.strokeStyle = '#ff7a59'; ctx.lineWidth = 3;
+  ctx.strokeRect(rx1, ry - 10, 80, 20);
+  ctx.fillStyle = '#ff7a59'; ctx.font = 'bold 12px monospace';
+  ctx.fillText(R + ' Ω', rx1 + 22, ry + 4);
+  ctx.fillStyle = '#8899cc'; ctx.font = '11px Segoe UI';
+  ctx.fillText('RESISTOR', rx1 + 10, ry + 26);
+
+  // Ammeter circle (right side mid)
+  const ax = path[3][0], ay = path[3][1];
+  ctx.beginPath(); ctx.arc(ax, ay, 18, 0, Math.PI * 2);
+  ctx.strokeStyle = '#5de6b0'; ctx.lineWidth = 2; ctx.stroke();
+  ctx.fillStyle = '#0a0e1a'; ctx.fill();
+  ctx.fillStyle = '#5de6b0'; ctx.font = 'bold 13px monospace';
+  ctx.fillText('A', ax - 5, ay + 5);
+  ctx.fillStyle = '#8899cc'; ctx.font = '10px Segoe UI';
+  ctx.fillText(I.toFixed(2)+'A', ax - 14, ay + 30);
+
+  // Moving dots
+  dots.forEach(d => {
+    d.t = (d.t + speed * dt) % 1;
+    const [px, py] = lerpPath(path, d.t);
+    const alpha = 0.6 + 0.4 * Math.sin(d.t * Math.PI * 8);
+    ctx.beginPath();
+    ctx.arc(px, py, 4, 0, Math.PI * 2);
+    ctx.fillStyle = `rgba(93,230,176,${alpha})`;
+    ctx.fill();
+    ctx.beginPath();
+    ctx.arc(px, py, 7, 0, Math.PI * 2);
+    ctx.fillStyle = `rgba(93,230,176,0.15)`;
+    ctx.fill();
+  });
+
+  // Current flow label
+  ctx.fillStyle = '#8899cc'; ctx.font = '11px Segoe UI';
+  ctx.fillText('electrons →', path[1][0] + 10, path[1][1] - 14);
+
+  animFrame = requestAnimationFrame(draw);
+}
+
+function restart() {
+  const { I } = getVals();
+  const dotCount = Math.max(3, Math.min(20, Math.round(I * 8)));
+  initDots(dotCount);
+  updateHUD();
+}
+
+sV.addEventListener('input', restart);
+sR.addEventListener('input', restart);
+
+restart();
+requestAnimationFrame(draw);
+</script>
+</body>
+</html>

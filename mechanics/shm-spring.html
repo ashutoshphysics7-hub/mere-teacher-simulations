@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SHM Spring - Mere Teacher</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: #0a0e1a; color: #e0e6ff; font-family: 'Segoe UI', sans-serif; min-height: 100vh; }
+  .header { display: flex; align-items: center; padding: 18px 24px; background: rgba(79,124,255,0.08);
+    border-bottom: 1px solid rgba(79,124,255,0.2); position: relative; }
+  .logo { font-size: 2rem; margin-right: 14px; }
+  .title-block h1 { font-size: 1.4rem; color: #4f7cff; font-weight: 700; }
+  .title-block p { font-size: 0.8rem; color: #8899cc; margin-top: 2px; }
+  .badge { position: absolute; right: 24px; top: 50%; transform: translateY(-50%);
+    background: rgba(79,124,255,0.18); border: 1px solid #4f7cff; color: #4f7cff;
+    padding: 4px 14px; border-radius: 20px; font-size: 0.78rem; font-weight: 600; }
+  .main { padding: 20px 24px; max-width: 900px; margin: 0 auto; }
+  .canvas-wrap { position: relative; background: rgba(255,255,255,0.03); border-radius: 16px;
+    border: 1px solid rgba(79,124,255,0.15); overflow: hidden; margin-bottom: 20px; }
+  canvas { display: block; width: 100%; }
+  .hud { position: absolute; top: 14px; right: 14px; background: rgba(10,14,26,0.88);
+    border: 1px solid rgba(93,230,176,0.3); border-radius: 12px; padding: 12px 18px; min-width: 170px; }
+  .hud-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 7px; }
+  .hud-row:last-child { margin-bottom: 0; }
+  .hud-label { font-size: 0.75rem; color: #8899cc; }
+  .hud-val { font-size: 1.0rem; font-weight: 700; color: #5de6b0; font-family: monospace; }
+  .controls { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; margin-bottom: 20px; }
+  .slider-card { background: rgba(255,255,255,0.04); border: 1px solid rgba(79,124,255,0.15);
+    border-radius: 12px; padding: 14px; }
+  .slider-card label { font-size: 0.8rem; color: #8899cc; display: block; margin-bottom: 8px; }
+  .slider-card .val-display { font-size: 1.1rem; font-weight: 700; color: #4f7cff; margin-bottom: 8px; }
+  input[type=range] { width: 100%; accent-color: #4f7cff; cursor: pointer; }
+  .formula-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px; }
+  .formula-card { background: rgba(79,124,255,0.07); border: 1px solid rgba(79,124,255,0.2);
+    border-radius: 12px; padding: 14px 18px; text-align: center; }
+  .formula-card .formula { font-size: 1.05rem; color: #5de6b0; font-family: monospace; font-weight: 700; }
+  .formula-card .fname { font-size: 0.72rem; color: #8899cc; margin-top: 4px; }
+  .keypoints { background: rgba(93,230,176,0.05); border: 1px solid rgba(93,230,176,0.2);
+    border-radius: 12px; padding: 16px 20px; }
+  .keypoints h3 { font-size: 0.9rem; color: #5de6b0; margin-bottom: 10px; }
+  .keypoints ul { list-style: none; }
+  .keypoints li { font-size: 0.82rem; color: #b0bedd; padding: 4px 0; padding-left: 18px; position: relative; }
+  .keypoints li::before { content: '▸'; position: absolute; left: 0; color: #4f7cff; }
+</style>
+</head>
+<body>
+<div class="header">
+  <div class="logo">🌊</div>
+  <div class="title-block">
+    <h1>SHM — Spring Mass</h1>
+    <p>Mere Teacher — Interactive Physics Lab</p>
+  </div>
+  <div class="badge">Class 11</div>
+</div>
+<div class="main">
+  <div class="canvas-wrap">
+    <canvas id="c" height="280"></canvas>
+    <div class="hud">
+      <div class="hud-row"><span class="hud-label">Displacement x</span><span class="hud-val" id="hudX">—</span></div>
+      <div class="hud-row"><span class="hud-label">Velocity v</span><span class="hud-val" id="hudVel">—</span></div>
+      <div class="hud-row"><span class="hud-label">Time t</span><span class="hud-val" id="hudT">—</span></div>
+      <div class="hud-row"><span class="hud-label">Period T</span><span class="hud-val" id="hudPer">—</span></div>
+    </div>
+  </div>
+  <div class="controls">
+    <div class="slider-card">
+      <label>Mass m (kg)</label>
+      <div class="val-display" id="mDisp">1.0 kg</div>
+      <input type="range" id="sM" min="0.1" max="5" value="1" step="0.1">
+    </div>
+    <div class="slider-card">
+      <label>Spring const k (N/m)</label>
+      <div class="val-display" id="kDisp">10 N/m</div>
+      <input type="range" id="sK" min="1" max="100" value="10" step="1">
+    </div>
+    <div class="slider-card">
+      <label>Amplitude A (m)</label>
+      <div class="val-display" id="aDisp">0.20 m</div>
+      <input type="range" id="sA" min="0.05" max="0.5" value="0.2" step="0.01">
+    </div>
+  </div>
+  <div class="formula-grid">
+    <div class="formula-card"><div class="formula">T = 2π√(m/k)</div><div class="fname">Period (seconds)</div></div>
+    <div class="formula-card"><div class="formula">ω = √(k/m)</div><div class="fname">Angular frequency</div></div>
+    <div class="formula-card"><div class="formula">x = A·cos(ωt)</div><div class="fname">Displacement</div></div>
+    <div class="formula-card"><div class="formula">v = −Aω·sin(ωt)</div><div class="fname">Velocity</div></div>
+  </div>
+  <div class="keypoints">
+    <h3>KEY POINTS</h3>
+    <ul>
+      <li>Period T = 2π√(m/k) is independent of amplitude — hallmark of SHM.</li>
+      <li>Velocity is maximum at equilibrium (x=0) and zero at extreme positions (x=±A).</li>
+      <li>Total mechanical energy E = ½kA² is constant (energy conservation in SHM).</li>
+      <li>Restoring force F = −kx always points toward the equilibrium position.</li>
+      <li>KE = ½m v², PE = ½k x² ; KE + PE = constant throughout motion.</li>
+    </ul>
+  </div>
+</div>
+<script>
+const canvas = document.getElementById('c');
+const ctx = canvas.getContext('2d');
+let t = 0, lastTS = 0;
+let graphPts = [];
+const MAX_PTS = 300;
+
+function getVals() {
+  const m = parseFloat(document.getElementById('sM').value);
+  const k = parseFloat(document.getElementById('sK').value);
+  const A = parseFloat(document.getElementById('sA').value);
+  const omega = Math.sqrt(k / m);
+  const T = 2 * Math.PI / omega;
+  return { m, k, A, omega, T };
+}
+
+function resize() { canvas.width = canvas.offsetWidth; }
+resize();
+window.addEventListener('resize', () => { resize(); graphPts = []; });
+
+function drawSpring(x1, y, x2, coils, color) {
+  const len = x2 - x1;
+  const segW = len / (coils * 2 + 2);
+  ctx.beginPath();
+  ctx.moveTo(x1, y);
+  ctx.lineTo(x1 + segW, y);
+  for (let i = 0; i < coils; i++) {
+    ctx.lineTo(x1 + segW + (i * 2 + 0.5) * segW, y - 14);
+    ctx.lineTo(x1 + segW + (i * 2 + 1.5) * segW, y + 14);
+  }
+  ctx.lineTo(x2, y);
+  ctx.strokeStyle = color; ctx.lineWidth = 2.5; ctx.stroke();
+}
+
+function frame(ts) {
+  const dt = Math.min((ts - lastTS) / 1000, 0.04);
+  lastTS = ts;
+  t += dt;
+
+  const { m, k, A, omega, T } = getVals();
+  const x = A * Math.cos(omega * t);
+  const v = -A * omega * Math.sin(omega * t);
+
+  const w = canvas.width, h = canvas.height;
+  const leftPanel = w * 0.5;
+  const rightPanel = w * 0.5;
+  const wallX = 30;
+  const eqX = leftPanel * 0.65;     // equilibrium position of mass center
+  const massR = 22;
+  const massX = eqX + x * (leftPanel * 0.35 / A);
+  const axisY = h * 0.5;
+
+  ctx.clearRect(0, 0, w, h);
+
+  // LEFT PANEL — spring mass
+  // Wall
+  ctx.fillStyle = 'rgba(79,124,255,0.25)';
+  ctx.fillRect(wallX - 10, axisY - 60, 10, 120);
+  ctx.strokeStyle = '#4f7cff'; ctx.lineWidth = 1.5;
+  for (let i = 0; i < 8; i++) {
+    ctx.beginPath();
+    ctx.moveTo(wallX - 10, axisY - 55 + i * 14);
+    ctx.lineTo(wallX - 20, axisY - 48 + i * 14);
+    ctx.stroke();
+  }
+
+  // Axis dashes
+  ctx.setLineDash([4, 4]);
+  ctx.strokeStyle = 'rgba(79,124,255,0.2)'; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(wallX, axisY); ctx.lineTo(leftPanel - 10, axisY); ctx.stroke();
+  ctx.setLineDash([]);
+
+  // Equilibrium marker
+  ctx.setLineDash([3, 3]);
+  ctx.strokeStyle = 'rgba(255,221,87,0.4)'; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(eqX, axisY - 55); ctx.lineTo(eqX, axisY + 55); ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.fillStyle = '#ffdd5788'; ctx.font = '10px monospace';
+  ctx.fillText('eq', eqX - 8, axisY - 58);
+
+  // Spring
+  drawSpring(wallX, axisY, massX - massR, 8, '#4f7cff');
+
+  // Mass block
+  const gradient = ctx.createRadialGradient(massX, axisY, 2, massX, axisY, massR);
+  gradient.addColorStop(0, 'rgba(79,124,255,0.8)');
+  gradient.addColorStop(1, 'rgba(79,124,255,0.3)');
+  ctx.beginPath(); ctx.arc(massX, axisY, massR, 0, Math.PI * 2);
+  ctx.fillStyle = gradient; ctx.fill();
+  ctx.strokeStyle = '#4f7cff'; ctx.lineWidth = 2; ctx.stroke();
+  ctx.fillStyle = '#fff'; ctx.font = 'bold 11px Segoe UI'; ctx.textAlign = 'center';
+  ctx.fillText('m', massX, axisY + 4);
+  ctx.textAlign = 'left';
+
+  // Velocity arrow
+  if (Math.abs(v) > 0.001) {
+    const arrowLen = Math.min(Math.abs(v) / (A * omega) * 40, 40);
+    const dir = v > 0 ? 1 : -1;
+    ctx.save();
+    ctx.strokeStyle = '#5de6b0'; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(massX + massR * dir, axisY);
+    ctx.lineTo(massX + (massR + arrowLen) * dir, axisY); ctx.stroke();
+    ctx.fillStyle = '#5de6b0';
+    ctx.beginPath();
+    ctx.moveTo(massX + (massR + arrowLen) * dir, axisY);
+    ctx.lineTo(massX + (massR + arrowLen - 8) * dir, axisY - 5);
+    ctx.lineTo(massX + (massR + arrowLen - 8) * dir, axisY + 5);
+    ctx.closePath(); ctx.fill();
+    ctx.restore();
+  }
+
+  // LEFT panel labels
+  ctx.fillStyle = '#8899cc'; ctx.font = '11px Segoe UI';
+  ctx.fillText('Spring-Mass Oscillation', wallX, 20);
+
+  // DIVIDER
+  ctx.strokeStyle = 'rgba(79,124,255,0.15)'; ctx.lineWidth = 1;
+  ctx.setLineDash([4, 4]);
+  ctx.beginPath(); ctx.moveTo(leftPanel, 10); ctx.lineTo(leftPanel, h - 10); ctx.stroke();
+  ctx.setLineDash([]);
+
+  // RIGHT PANEL — displacement-time graph
+  const gX = leftPanel + 20, gW = w - leftPanel - 30;
+  const gY = h * 0.15, gH = h * 0.70;
+  const midY = gY + gH / 2;
+  const scaleA = (gH / 2) / (A * 1.1);
+
+  // Axes
+  ctx.strokeStyle = 'rgba(79,124,255,0.4)'; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(gX, gY); ctx.lineTo(gX, gY + gH); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(gX, midY); ctx.lineTo(gX + gW, midY); ctx.stroke();
+
+  // Axis labels
+  ctx.fillStyle = '#8899cc'; ctx.font = '10px monospace';
+  ctx.fillText('+A', gX + 3, gY + 10);
+  ctx.fillText('−A', gX + 3, gY + gH - 2);
+  ctx.fillText('x(t)', gX + 3, midY - 8);
+  ctx.fillText('t →', gX + gW - 25, midY + 12);
+
+  // Add current point
+  graphPts.push({ t, x });
+  if (graphPts.length > MAX_PTS) graphPts.shift();
+
+  // Draw graph
+  if (graphPts.length > 1) {
+    const tSpan = Math.max(T * 3, 1);
+    const tNow = graphPts[graphPts.length - 1].t;
+    ctx.beginPath();
+    ctx.strokeStyle = '#5de6b0'; ctx.lineWidth = 2;
+    graphPts.forEach((p, i) => {
+      const px = gX + ((p.t - (tNow - tSpan)) / tSpan) * gW;
+      const py = midY - p.x * scaleA;
+      if (i === 0) ctx.moveTo(px, py);
+      else ctx.lineTo(px, py);
+    });
+    ctx.stroke();
+    // Current dot
+    const lastP = graphPts[graphPts.length - 1];
+    const lpx = gX + ((lastP.t - (tNow - tSpan)) / tSpan) * gW;
+    const lpy = midY - lastP.x * scaleA;
+    ctx.beginPath(); ctx.arc(lpx, lpy, 5, 0, Math.PI * 2);
+    ctx.fillStyle = '#5de6b0'; ctx.fill();
+  }
+
+  ctx.fillStyle = '#8899cc'; ctx.font = '11px Segoe UI';
+  ctx.fillText('Displacement vs Time', gX + gW / 2 - 60, gY - 8);
+
+  // HUD
+  document.getElementById('hudX').textContent = x.toFixed(3) + ' m';
+  document.getElementById('hudVel').textContent = v.toFixed(3) + ' m/s';
+  document.getElementById('hudT').textContent = t.toFixed(2) + ' s';
+  document.getElementById('hudPer').textContent = T.toFixed(2) + ' s';
+  document.getElementById('mDisp').textContent = parseFloat(document.getElementById('sM').value).toFixed(1) + ' kg';
+  document.getElementById('kDisp').textContent = document.getElementById('sK').value + ' N/m';
+  document.getElementById('aDisp').textContent = parseFloat(document.getElementById('sA').value).toFixed(2) + ' m';
+
+  requestAnimationFrame(frame);
+}
+
+['sM','sK','sA'].forEach(id => {
+  document.getElementById(id).addEventListener('input', () => { t = 0; graphPts = []; });
+});
+
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>

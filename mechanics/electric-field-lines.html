@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Electric Field Lines – Mere Teacher</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:#0a0e1a;color:#e0e6f0;font-family:'Segoe UI',sans-serif;min-height:100vh;padding:16px;}
+.header{display:flex;align-items:center;gap:10px;margin-bottom:14px;}
+.logo{font-size:22px;}
+.title{font-size:18px;font-weight:600;color:#fff;}
+.badge{background:#4f7cff22;border:1px solid #4f7cff55;color:#4f7cff;font-size:11px;padding:3px 9px;border-radius:20px;font-weight:600;}
+.layout{display:flex;flex-direction:column;gap:14px;}
+canvas{width:100%;border-radius:12px;background:#060a14;display:block;}
+.controls{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.ctrl{background:#0d1325;border:1px solid #1e2a45;border-radius:10px;padding:12px;}
+.ctrl label{font-size:12px;color:#8899bb;display:block;margin-bottom:6px;}
+.ctrl .val{color:#4f7cff;font-weight:700;float:right;}
+input[type=range]{width:100%;accent-color:#4f7cff;height:4px;cursor:pointer;}
+.hud{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:4px;}
+.hud-card{background:#0d1325;border:1px solid #1e2a45;border-radius:10px;padding:10px 12px;}
+.hud-card .label{font-size:11px;color:#8899bb;margin-bottom:4px;}
+.hud-card .value{font-size:15px;font-weight:700;color:#5de6b0;}
+.formulas{background:#0d1325;border:1px solid #1e2a45;border-radius:10px;padding:12px;margin-top:4px;}
+.formulas h3{font-size:12px;color:#8899bb;margin-bottom:8px;text-transform:uppercase;letter-spacing:0.5px;}
+.formula-row{font-size:12px;color:#c8d8f0;margin-bottom:4px;font-family:monospace;}
+.keypoints{background:#0d1325;border:1px solid #5de6b022;border-radius:10px;padding:12px;margin-top:4px;}
+.keypoints h3{font-size:12px;color:#5de6b0;margin-bottom:8px;text-transform:uppercase;letter-spacing:0.5px;}
+.kp{font-size:12px;color:#c8d8f0;margin-bottom:4px;padding-left:10px;border-left:2px solid #5de6b055;}
+</style>
+</head>
+<body>
+<div class="header">
+  <span class="logo">&#9889;</span>
+  <span class="title">Electric Field Lines</span>
+  <span class="badge">Class 12</span>
+</div>
+<div class="layout">
+  <canvas id="canvas" height="340"></canvas>
+  <div class="controls">
+    <div class="ctrl">
+      <label>Charge q₁ <span class="val" id="q1val">+5 μC</span></label>
+      <input type="range" id="q1" min="-10" max="10" step="0.5" value="5">
+    </div>
+    <div class="ctrl">
+      <label>Charge q₂ <span class="val" id="q2val">-5 μC</span></label>
+      <input type="range" id="q2" min="-10" max="10" step="0.5" value="-5">
+    </div>
+    <div class="ctrl" style="grid-column:1/-1">
+      <label>Separation d <span class="val" id="dval">5 cm</span></label>
+      <input type="range" id="sep" min="1" max="10" step="0.5" value="5">
+    </div>
+  </div>
+  <div class="hud">
+    <div class="hud-card">
+      <div class="label">Force F</div>
+      <div class="value" id="hud-F">–</div>
+    </div>
+    <div class="hud-card">
+      <div class="label">E at midpoint</div>
+      <div class="value" id="hud-E">–</div>
+    </div>
+    <div class="hud-card">
+      <div class="label">Field direction</div>
+      <div class="value" id="hud-dir" style="font-size:12px;">–</div>
+    </div>
+  </div>
+  <div class="formulas">
+    <h3>Formulas</h3>
+    <div class="formula-row">F = kq₁q₂ / r²</div>
+    <div class="formula-row">E = kq / r²</div>
+    <div class="formula-row">k = 9 × 10⁹ N·m²/C²</div>
+  </div>
+  <div class="keypoints">
+    <h3>Key Points</h3>
+    <div class="kp">Field lines go from + to − charges</div>
+    <div class="kp">Field lines never cross each other</div>
+    <div class="kp">Density of lines shows field strength</div>
+  </div>
+</div>
+</body>
+</html>
+<script>
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+const k = 9e9;
+
+function getParams() {
+  return {
+    q1: parseFloat(document.getElementById('q1').value) * 1e-6,
+    q2: parseFloat(document.getElementById('q2').value) * 1e-6,
+    sep: parseFloat(document.getElementById('sep').value) * 0.01
+  };
+}
+
+function updateLabels() {
+  const q1v = parseFloat(document.getElementById('q1').value);
+  const q2v = parseFloat(document.getElementById('q2').value);
+  const sv = parseFloat(document.getElementById('sep').value);
+  document.getElementById('q1val').textContent = (q1v >= 0 ? '+' : '') + q1v + ' μC';
+  document.getElementById('q2val').textContent = (q2v >= 0 ? '+' : '') + q2v + ' μC';
+  document.getElementById('dval').textContent = sv.toFixed(1) + ' cm';
+}
+
+function updateHUD(q1, q2, sep) {
+  const F = Math.abs(k * q1 * q2 / (sep * sep));
+  const r = sep / 2;
+  const E1 = Math.abs(k * q1 / (r * r));
+  const E2 = Math.abs(k * q2 / (r * r));
+  const Enet = Math.abs(E1 - E2);
+  document.getElementById('hud-F').textContent = F.toExponential(2) + ' N';
+  document.getElementById('hud-E').textContent = Enet.toExponential(2) + ' N/C';
+  const both = q1 * q2;
+  let dir = '→ (outward)';
+  if (both < 0) dir = '← (inward)';
+  else if (q1 > 0 && q2 > 0) dir = '↔ (repulsive)';
+  else if (q1 < 0 && q2 < 0) dir = '↔ (repulsive)';
+  document.getElementById('hud-dir').textContent = dir;
+}
+
+function eField(x, y, cx1, cy1, q1, cx2, cy2, q2) {
+  let ex = 0, ey = 0;
+  [[cx1,cy1,q1],[cx2,cy2,q2]].forEach(([cx,cy,q]) => {
+    const dx = x - cx, dy = y - cy;
+    const r2 = dx*dx + dy*dy;
+    const r = Math.sqrt(r2);
+    if (r < 1) return;
+    const mag = k * q / r2;
+    ex += mag * dx / r;
+    ey += mag * dy / r;
+  });
+  return {ex, ey};
+}
+
+function drawArrow(x1, y1, x2, y2, color) {
+  const angle = Math.atan2(y2-y1, x2-x1);
+  const len = Math.sqrt((x2-x1)**2+(y2-y1)**2);
+  if (len < 2) return;
+  ctx.strokeStyle = color;
+  ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  ctx.moveTo(x1, y1);
+  ctx.lineTo(x2, y2);
+  ctx.stroke();
+  const as = 6;
+  ctx.fillStyle = color;
+  ctx.beginPath();
+  ctx.moveTo(x2, y2);
+  ctx.lineTo(x2 - as*Math.cos(angle-0.4), y2 - as*Math.sin(angle-0.4));
+  ctx.lineTo(x2 - as*Math.cos(angle+0.4), y2 - as*Math.sin(angle+0.4));
+  ctx.closePath();
+  ctx.fill();
+}
+
+function drawFieldLines(cx1, cy1, q1, cx2, cy2, q2) {
+  const nLines = 16;
+  const sources = [];
+  if (q1 > 0) sources.push({cx:cx1,cy:cy1,q:q1,partner:{cx:cx2,cy:cy2,q:q2}});
+  if (q2 > 0) sources.push({cx:cx2,cy:cy2,q:q2,partner:{cx:cx1,cy:cy1,q:q1}});
+  if (sources.length === 0) {
+    if (q1 < 0) sources.push({cx:cx1,cy:cy1,q:q1,partner:{cx:cx2,cy:cy2,q:q2},reverse:true});
+  }
+  const W = canvas.width, H = canvas.height;
+  sources.forEach(({cx,cy,q,partner,reverse}) => {
+    for (let i = 0; i < nLines; i++) {
+      const angle = (2 * Math.PI * i) / nLines;
+      const startR = 14;
+      let x = cx + startR * Math.cos(angle);
+      let y = cy + startR * Math.sin(angle);
+      ctx.beginPath();
+      ctx.moveTo(x, y);
+      const pts = [{x,y}];
+      const step = 3;
+      let arrowDrawn = false;
+      for (let t = 0; t < 800; t++) {
+        const {ex, ey} = eField(x, y, cx1, cy1, q1, cx2, cy2, q2);
+        const mag = Math.sqrt(ex*ex + ey*ey);
+        if (mag === 0) break;
+        const sign = reverse ? -1 : 1;
+        const nx = x + sign * step * ex / mag;
+        const ny = y + sign * step * ey / mag;
+        ctx.lineTo(nx, ny);
+        if (t % 60 === 30) {
+          drawArrow(x, y, nx, ny, '#4f7cff');
+          arrowDrawn = true;
+        }
+        const d1 = Math.sqrt((nx-cx1)**2+(ny-cy1)**2);
+        const d2 = Math.sqrt((nx-cx2)**2+(ny-cy2)**2);
+        if (d1 < 12 || d2 < 12) break;
+        if (nx<0||nx>W||ny<0||ny>H) break;
+        x = nx; y = ny;
+      }
+      ctx.strokeStyle = '#4f7cff88';
+      ctx.lineWidth = 1.2;
+      ctx.stroke();
+    }
+  });
+}
+
+function draw() {
+  const W = canvas.clientWidth * window.devicePixelRatio || 360;
+  const H = 340;
+  canvas.width = W;
+  canvas.height = H;
+  ctx.clearRect(0, 0, W, H);
+
+  const {q1, q2, sep} = getParams();
+  const scale = W * 0.6 / (sep > 0.08 ? sep : 0.08);
+  const cx1 = W / 2 - sep * scale / 2;
+  const cx2 = W / 2 + sep * scale / 2;
+  const cy = H / 2;
+
+  drawFieldLines(cx1, cy, q1, cx2, cy, q2);
+
+  [[cx1,q1],[cx2,q2]].forEach(([cx,q]) => {
+    const color = q >= 0 ? '#ff4466' : '#4488ff';
+    const label = q >= 0 ? '+' : '−';
+    ctx.beginPath();
+    ctx.arc(cx, cy, 13, 0, Math.PI*2);
+    ctx.fillStyle = color + '33';
+    ctx.fill();
+    ctx.beginPath();
+    ctx.arc(cx, cy, 13, 0, Math.PI*2);
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 2;
+    ctx.stroke();
+    ctx.fillStyle = color;
+    ctx.font = 'bold 16px Segoe UI';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(label, cx, cy);
+  });
+
+  updateHUD(q1, q2, sep);
+}
+
+['q1','q2','sep'].forEach(id => {
+  document.getElementById(id).addEventListener('input', () => { updateLabels(); draw(); });
+});
+updateLabels();
+draw();
+window.addEventListener('resize', draw);
+</script>

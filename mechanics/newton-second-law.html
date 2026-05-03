@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Newton's Second Law — Mere Teacher</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#0a0e1a;color:#e0e8ff;font-family:'Segoe UI',system-ui,sans-serif;min-height:100vh;overflow-x:hidden}
+header{background:linear-gradient(135deg,#1a1f35,#0d1227);border-bottom:1px solid #2a3560;padding:12px 20px;display:flex;align-items:center;gap:12px}
+header .logo{width:32px;height:32px;background:linear-gradient(135deg,#4f7cff,#a855f7);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px}
+header h1{font-size:15px;font-weight:600;color:#c8d8ff}
+header span{font-size:11px;color:#6b7cb0;margin-left:auto;background:#1e2540;padding:3px 10px;border-radius:20px;border:1px solid #2a3560}
+.canvas-wrap{position:relative;background:#080c18;border-bottom:1px solid #1e2540}
+canvas{display:block;width:100%}
+.hud{position:absolute;top:10px;left:10px;display:flex;gap:8px;flex-wrap:wrap}
+.hud-box{background:rgba(10,14,26,0.82);border:1px solid #2a3560;border-radius:8px;padding:5px 10px;font-size:11px}
+.hud-box .label{color:#6b7cb0;font-size:10px}.hud-box .value{color:#7eb8ff;font-weight:700;font-size:13px}
+.controls{padding:16px 16px 8px;background:#0d1122}
+.control-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.control-item label{display:block;font-size:11px;color:#6b7cb0;margin-bottom:4px;letter-spacing:.5px;text-transform:uppercase}
+.control-item .val-row{display:flex;align-items:center;gap:8px;margin-bottom:4px}
+.control-item .val-row span{font-size:14px;font-weight:700;color:#7eb8ff;min-width:42px}
+input[type=range]{-webkit-appearance:none;width:100%;height:4px;background:#1e2a50;border-radius:2px;outline:none}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:16px;height:16px;background:linear-gradient(135deg,#4f7cff,#a855f7);border-radius:50%;cursor:pointer}
+.btn-row{display:flex;gap:10px;padding:12px 16px}
+button{flex:1;padding:11px;border:none;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;transition:opacity .15s,transform .1s}
+button:active{transform:scale(.97);opacity:.85}
+#launchBtn{background:linear-gradient(135deg,#4f7cff,#6e44cc);color:#fff}
+#resetBtn{background:#1e2540;color:#8899cc;border:1px solid #2a3560}
+.formula-section{margin:0 16px 16px;background:#0f1428;border:1px solid #1e2a50;border-radius:12px;overflow:hidden}
+.formula-section h3{font-size:12px;font-weight:600;color:#6b7cb0;text-transform:uppercase;letter-spacing:.8px;padding:10px 14px;background:#0d1222;border-bottom:1px solid #1e2a50}
+.formula-grid{display:grid;grid-template-columns:1fr 1fr}
+.formula-item{padding:10px 14px;border-bottom:1px solid #161e38;border-right:1px solid #161e38}
+.formula-item:nth-child(even){border-right:none}.formula-item:nth-last-child(-n+2){border-bottom:none}
+.f-label{font-size:10px;color:#4f5e88;margin-bottom:3px;text-transform:uppercase;letter-spacing:.4px}
+.f-eq{font-size:12px;color:#a0c4ff;font-family:'Courier New',monospace}
+.f-val{font-size:13px;font-weight:700;color:#5de6b0;margin-top:2px}
+.obs-section{margin:0 16px 20px;background:#0f1428;border:1px solid #1e2a50;border-radius:12px;padding:12px 14px}
+.obs-section h3{font-size:12px;font-weight:600;color:#6b7cb0;text-transform:uppercase;letter-spacing:.8px;margin-bottom:10px}
+.obs-item{display:flex;align-items:flex-start;gap:8px;margin-bottom:7px;font-size:12px;color:#8899cc;line-height:1.5}
+.obs-item .dot{width:6px;height:6px;background:#4f7cff;border-radius:50%;margin-top:5px;flex-shrink:0}
+.highlight{color:#7eb8ff;font-weight:600}
+#statusBar{text-align:center;font-size:11px;color:#4f5e88;padding:4px;letter-spacing:.5px}
+.surface-type{display:flex;gap:8px;padding:0 16px 8px}
+.surf-btn{flex:1;padding:7px;border:1px solid #2a3560;border-radius:8px;background:#1e2540;color:#8899cc;font-size:11px;cursor:pointer;transition:all .2s}
+.surf-btn.active{background:linear-gradient(135deg,#4f7cff22,#6e44cc22);border-color:#4f7cff;color:#7eb8ff}
+</style>
+</head>
+<body>
+<header><div class="logo">⚡</div><h1>Newton's Second Law</h1><span>Class 9</span></header>
+<div class="canvas-wrap">
+  <canvas id="c"></canvas>
+  <div class="hud">
+    <div class="hud-box"><div class="label">Acceleration</div><div class="value" id="hA">— m/s²</div></div>
+    <div class="hud-box"><div class="label">Velocity</div><div class="value" id="hV">0 m/s</div></div>
+    <div class="hud-box"><div class="label">Distance</div><div class="value" id="hD">0 m</div></div>
+  </div>
+  <div id="statusBar">Set Force & Mass, then press Apply Force</div>
+</div>
+<div class="controls">
+  <div class="control-grid">
+    <div class="control-item"><label>Net Force (F)</label><div class="val-row"><span id="fVal">20</span><small>N</small></div><input type="range" id="fSlider" min="0" max="100" value="20" step="1"></div>
+    <div class="control-item"><label>Mass (m)</label><div class="val-row"><span id="mVal">5</span><small>kg</small></div><input type="range" id="mSlider" min="1" max="20" value="5" step="1"></div>
+    <div class="control-item"><label>Friction (μ)</label><div class="val-row"><span id="muVal">0.0</span></div><input type="range" id="muSlider" min="0" max="0.8" value="0" step="0.05"></div>
+    <div class="control-item"><label>Gravity (g)</label><div class="val-row"><span id="gVal">10</span><small>m/s²</small></div><input type="range" id="gSlider" min="1" max="25" value="10" step="1"></div>
+  </div>
+</div>
+<div class="btn-row"><button id="launchBtn">▶ Apply Force</button><button id="resetBtn">↺ Reset</button></div>
+<div class="formula-section"><h3>Formulas & Live Values</h3>
+<div class="formula-grid">
+  <div class="formula-item"><div class="f-label">Newton's 2nd Law</div><div class="f-eq">F = ma</div><div class="f-val" id="fF">—</div></div>
+  <div class="formula-item"><div class="f-label">Acceleration</div><div class="f-eq">a = F_net / m</div><div class="f-val" id="fA">—</div></div>
+  <div class="formula-item"><div class="f-label">Friction Force</div><div class="f-eq">f = μmg</div><div class="f-val" id="fFric">—</div></div>
+  <div class="formula-item"><div class="f-label">Net Force</div><div class="f-eq">F_net = F − f</div><div class="f-val" id="fNet">—</div></div>
+</div></div>
+<div class="obs-section"><h3>Key Points</h3>
+  <div class="obs-item"><div class="dot"></div><span><span class="highlight">F = ma</span>: Acceleration is directly proportional to net force and inversely proportional to mass.</span></div>
+  <div class="obs-item"><div class="dot"></div><span>Friction force <span class="highlight">f = μmg</span> opposes motion. Net force = Applied force − Friction.</span></div>
+  <div class="obs-item"><div class="dot"></div><span>If F_net = 0, object moves with <span class="highlight">constant velocity</span> (Newton's 1st Law).</span></div>
+</div>
+<script>
+const canvas=document.getElementById('c'),ctx=canvas.getContext('2d');
+let F=20,m=5,mu=0,g=10,animId=null,running=false;
+let vel=0,dist=0,t=0,blockX=0;
+
+function resize(){const w=canvas.parentElement.clientWidth,h=Math.min(w*.45,220);canvas.width=w;canvas.height=h;}
+resize();window.addEventListener('resize',()=>{resize();draw();});
+
+function calcA(){const fric=mu*m*g;const Fnet=Math.max(0,F-fric);return Fnet/m;}
+function updateFormulas(){
+  const fric=mu*m*g,Fnet=Math.max(0,F-fric),a=Fnet/m;
+  document.getElementById('fF').textContent=F.toFixed(1)+' N';
+  document.getElementById('fA').textContent=a.toFixed(2)+' m/s²';
+  document.getElementById('fFric').textContent=fric.toFixed(1)+' N';
+  document.getElementById('fNet').textContent=Fnet.toFixed(1)+' N';
+}
+function draw(){
+  const W=canvas.width,H=canvas.height;
+  ctx.clearRect(0,0,W,H);
+  // Grid
+  ctx.strokeStyle='#141c34';ctx.lineWidth=1;
+  for(let i=0;i<=10;i++){const x=W*i/10;ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,H);ctx.stroke();}
+  // Ground
+  ctx.fillStyle='#1e2a50';ctx.fillRect(0,H*.75,W,H*.25);
+  ctx.strokeStyle='#3a4e88';ctx.lineWidth=1.5;ctx.beginPath();ctx.moveTo(0,H*.75);ctx.lineTo(W,H*.75);ctx.stroke();
+  // Surface texture
+  ctx.strokeStyle='#2a3a6a';ctx.lineWidth=1;
+  for(let i=0;i<W;i+=20){ctx.beginPath();ctx.moveTo(i,H*.75);ctx.lineTo(i-10,H*.85);ctx.stroke();}
+  // Block
+  const bw=W*.12,bh=H*.28,by=H*.75-bh;
+  const bx=W*.1+blockX;
+  // shadow
+  ctx.fillStyle='rgba(79,124,255,0.12)';ctx.fillRect(bx+4,by+4,bw,bh);
+  // block body
+  const grad=ctx.createLinearGradient(bx,by,bx+bw,by+bh);
+  grad.addColorStop(0,'#2a4080');grad.addColorStop(1,'#1a2a60');
+  ctx.fillStyle=grad;ctx.fillRect(bx,by,bw,bh);
+  ctx.strokeStyle='#4f7cff';ctx.lineWidth=1.5;ctx.strokeRect(bx,by,bw,bh);
+  // mass label
+  ctx.fillStyle='#c8d8ff';ctx.font=`bold ${Math.max(10,bw*.2)}px sans-serif`;ctx.textAlign='center';
+  ctx.fillText(m+'kg',bx+bw/2,by+bh/2+4);ctx.textAlign='left';
+  // Force arrow
+  if(F>0){
+    const arrowLen=Math.min(W*.25,F*1.5);
+    const ax=bx+bw,ay=by+bh/2;
+    ctx.beginPath();ctx.moveTo(ax,ay);ctx.lineTo(ax+arrowLen,ay);
+    ctx.strokeStyle='#5de6b0';ctx.lineWidth=2.5;ctx.stroke();
+    ctx.beginPath();ctx.moveTo(ax+arrowLen,ay);ctx.lineTo(ax+arrowLen-8,ay-5);ctx.lineTo(ax+arrowLen-8,ay+5);ctx.closePath();
+    ctx.fillStyle='#5de6b0';ctx.fill();
+    ctx.fillStyle='#5de6b0';ctx.font='bold 10px sans-serif';ctx.fillText('F='+F+'N',ax+4,ay-6);
+  }
+  // Friction arrow
+  if(mu>0&&running){
+    const fric=mu*m*g,arrowLen=Math.min(W*.15,fric*1.5);
+    const ax=bx,ay=by+bh/2;
+    ctx.beginPath();ctx.moveTo(ax,ay);ctx.lineTo(ax-arrowLen,ay);
+    ctx.strokeStyle='#ff6b6b';ctx.lineWidth=2;ctx.stroke();
+    ctx.beginPath();ctx.moveTo(ax-arrowLen,ay);ctx.lineTo(ax-arrowLen+8,ay-4);ctx.lineTo(ax-arrowLen+8,ay+4);ctx.closePath();
+    ctx.fillStyle='#ff6b6b';ctx.fill();
+    ctx.fillStyle='#ff6b6b';ctx.font='bold 9px sans-serif';ctx.fillText('f',ax-arrowLen-12,ay+4);
+  }
+}
+function animate(){
+  const a=calcA();const dt=0.016;
+  vel+=a*dt;dist+=vel*dt;t+=dt;
+  blockX=Math.min(dist*12,canvas.width*.7);
+  document.getElementById('hA').textContent=a.toFixed(2)+' m/s²';
+  document.getElementById('hV').textContent=vel.toFixed(2)+' m/s';
+  document.getElementById('hD').textContent=dist.toFixed(2)+' m';
+  document.getElementById('statusBar').textContent=`t = ${t.toFixed(2)}s  |  a = ${a.toFixed(2)} m/s²  |  v = ${vel.toFixed(2)} m/s`;
+  draw();
+  if(blockX<canvas.width*.7) animId=requestAnimationFrame(animate);
+  else{document.getElementById('statusBar').textContent='Block reached end! Reset to try again.';}
+}
+function bindSlider(id,valId,setter,dec=0){
+  const sl=document.getElementById(id),vl=document.getElementById(valId);
+  sl.addEventListener('input',()=>{setter(parseFloat(sl.value));vl.textContent=parseFloat(sl.value).toFixed(dec);updateFormulas();draw();});
+}
+bindSlider('fSlider','fVal',v=>F=v);
+bindSlider('mSlider','mVal',v=>m=v);
+bindSlider('muSlider','muVal',v=>mu=v,1);
+bindSlider('gSlider','gVal',v=>g=v);
+document.getElementById('launchBtn').addEventListener('click',()=>{
+  if(animId)cancelAnimationFrame(animId);
+  if(blockX>=canvas.width*.65){vel=0;dist=0;t=0;blockX=0;}
+  running=true;updateFormulas();animate();
+});
+document.getElementById('resetBtn').addEventListener('click',()=>{
+  if(animId)cancelAnimationFrame(animId);
+  vel=0;dist=0;t=0;blockX=0;running=false;
+  document.getElementById('hA').textContent='— m/s²';
+  document.getElementById('hV').textContent='0 m/s';
+  document.getElementById('hD').textContent='0 m';
+  document.getElementById('statusBar').textContent='Set Force & Mass, then press Apply Force';
+  updateFormulas();draw();
+});
+updateFormulas();draw();
+</script>
+</body>
+</html>

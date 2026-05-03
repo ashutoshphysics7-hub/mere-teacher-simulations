@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RC Circuit – Mere Teacher</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:#0a0e1a;color:#e0e6f0;font-family:'Segoe UI',sans-serif;min-height:100vh;padding:16px;}
+.header{display:flex;align-items:center;gap:10px;margin-bottom:14px;}
+.logo{font-size:22px;}
+.title{font-size:18px;font-weight:600;color:#fff;}
+.badge{background:#4f7cff22;border:1px solid #4f7cff55;color:#4f7cff;font-size:11px;padding:3px 9px;border-radius:20px;font-weight:600;}
+canvas{width:100%;border-radius:12px;background:#060a14;display:block;margin-bottom:14px;}
+.controls{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;}
+.ctrl{background:#0d1325;border:1px solid #1e2a45;border-radius:10px;padding:12px;}
+.ctrl label{font-size:12px;color:#8899bb;display:block;margin-bottom:6px;}
+.ctrl .val{font-weight:700;float:right;color:#4f7cff;}
+input[type=range]{width:100%;accent-color:#4f7cff;height:4px;cursor:pointer;}
+.mode-row{display:flex;gap:8px;margin-bottom:10px;}
+.mode-btn{flex:1;padding:10px;border-radius:10px;border:1px solid #1e2a45;background:#0d1325;color:#8899bb;font-size:13px;font-weight:600;cursor:pointer;transition:all 0.2s;}
+.mode-btn.active{background:#4f7cff22;border-color:#4f7cff;color:#4f7cff;}
+.hud{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:10px;}
+.hud-card{background:#0d1325;border:1px solid #1e2a45;border-radius:10px;padding:10px 12px;}
+.hud-card .label{font-size:11px;color:#8899bb;margin-bottom:4px;}
+.hud-card .value{font-size:14px;font-weight:700;color:#5de6b0;}
+.formulas{background:#0d1325;border:1px solid #1e2a45;border-radius:10px;padding:12px;margin-bottom:10px;}
+.formulas h3{font-size:12px;color:#8899bb;margin-bottom:8px;text-transform:uppercase;letter-spacing:0.5px;}
+.formula-row{font-size:12px;color:#c8d8f0;margin-bottom:4px;font-family:monospace;}
+.keypoints{background:#0d1325;border:1px solid #5de6b022;border-radius:10px;padding:12px;}
+.keypoints h3{font-size:12px;color:#5de6b0;margin-bottom:8px;text-transform:uppercase;letter-spacing:0.5px;}
+.kp{font-size:12px;color:#c8d8f0;margin-bottom:4px;padding-left:10px;border-left:2px solid #5de6b055;}
+</style>
+</head>
+<body>
+<div class="header">
+  <span class="logo">&#128267;</span>
+  <span class="title">RC Circuit</span>
+  <span class="badge">Class 12</span>
+</div>
+<canvas id="canvas" height="320"></canvas>
+<div class="mode-row">
+  <button class="mode-btn active" id="btn-charge" onclick="setMode('charge')">Charging</button>
+  <button class="mode-btn" id="btn-discharge" onclick="setMode('discharge')">Discharging</button>
+</div>
+<div class="controls">
+  <div class="ctrl">
+    <label>Resistance R <span class="val" id="rval">1000 Ω</span></label>
+    <input type="range" id="res" min="100" max="10000" step="100" value="1000">
+  </div>
+  <div class="ctrl">
+    <label>Capacitance C <span class="val" id="cval">100 μF</span></label>
+    <input type="range" id="cap" min="1" max="1000" step="1" value="100">
+  </div>
+  <div class="ctrl" style="grid-column:1/-1">
+    <label>Voltage V₀ <span class="val" id="v0val">9 V</span></label>
+    <input type="range" id="volt" min="1" max="12" step="0.5" value="9">
+  </div>
+</div>
+<div class="hud">
+  <div class="hud-card">
+    <div class="label">V_C (now)</div>
+    <div class="value" id="hud-vc">–</div>
+  </div>
+  <div class="hud-card">
+    <div class="label">Current I</div>
+    <div class="value" id="hud-i">–</div>
+  </div>
+  <div class="hud-card">
+    <div class="label">Time const τ</div>
+    <div class="value" id="hud-tau">–</div>
+  </div>
+</div>
+<div class="formulas">
+  <h3>Formulas</h3>
+  <div class="formula-row">τ = RC</div>
+  <div class="formula-row">Charging:   V = V₀(1 − e^(−t/τ))</div>
+  <div class="formula-row">Discharge:  V = V₀·e^(−t/τ)</div>
+  <div class="formula-row">I = (V₀/R)·e^(−t/τ)</div>
+</div>
+<div class="keypoints">
+  <h3>Key Points</h3>
+  <div class="kp">At t = τ: V = 63.2% of V₀ (charging)</div>
+  <div class="kp">At t = 5τ: capacitor fully charged (99.3%)</div>
+  <div class="kp">Energy stored: E = ½CV²</div>
+</div>
+</body>
+</html>
+<script>
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+let mode = 'charge';
+let animT = 0;
+let animId = null;
+
+function setMode(m) {
+  mode = m;
+  document.getElementById('btn-charge').classList.toggle('active', m==='charge');
+  document.getElementById('btn-discharge').classList.toggle('active', m==='discharge');
+  restart();
+}
+
+function getParams() {
+  return {
+    R: parseFloat(document.getElementById('res').value),
+    C: parseFloat(document.getElementById('cap').value) * 1e-6,
+    V0: parseFloat(document.getElementById('volt').value)
+  };
+}
+
+function updateLabels() {
+  document.getElementById('rval').textContent = parseFloat(document.getElementById('res').value).toLocaleString() + ' Ω';
+  document.getElementById('cval').textContent = document.getElementById('cap').value + ' μF';
+  document.getElementById('v0val').textContent = parseFloat(document.getElementById('volt').value).toFixed(1) + ' V';
+}
+
+function Vc(t, R, C, V0) {
+  const tau = R * C;
+  if (mode === 'charge') return V0 * (1 - Math.exp(-t / tau));
+  return V0 * Math.exp(-t / tau);
+}
+
+function Ic(t, R, C, V0) {
+  const tau = R * C;
+  return (V0 / R) * Math.exp(-t / tau);
+}
+
+function drawCircuit(ctx, x, y, w, h, Vc, V0, mode) {
+  const cx = x + w/2, cy = y + h/2;
+  const bx = x+18, ty = y+22, bw = 26, bh = h-44;
+  ctx.strokeStyle = '#4f7cff';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(bx + bw/2, ty);
+  ctx.lineTo(bx + bw/2, ty - 10);
+  ctx.lineTo(x + w - 18, ty - 10);
+  ctx.lineTo(x + w - 18, ty + bh/2 - 14);
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(x + w - 18, ty + bh/2 + 14);
+  ctx.lineTo(x + w - 18, ty + bh);
+  ctx.lineTo(bx + bw/2, ty + bh);
+  ctx.lineTo(bx + bw/2, ty + bh - 14);
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(bx + bw/2, ty);
+  ctx.lineTo(bx + bw/2, ty + bh/2 - 14);
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(bx + bw/2, ty + bh/2 + 14);
+  ctx.lineTo(bx + bw/2, ty + bh);
+  ctx.stroke();
+
+  ctx.strokeStyle = '#ff4466';
+  ctx.lineWidth = 2.5;
+  ctx.beginPath(); ctx.moveTo(bx+bw/2-8, ty+bh/2-14); ctx.lineTo(bx+bw/2+8, ty+bh/2-14); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(bx+bw/2-5, ty+bh/2-8); ctx.lineTo(bx+bw/2+5, ty+bh/2-8); ctx.stroke();
+  ctx.strokeStyle = '#4488ff';
+  ctx.beginPath(); ctx.moveTo(bx+bw/2-8, ty+bh/2+8); ctx.lineTo(bx+bw/2+8, ty+bh/2+8); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(bx+bw/2-5, ty+bh/2+14); ctx.lineTo(bx+bw/2+5, ty+bh/2+14); ctx.stroke();
+  ctx.fillStyle = '#8899bb'; ctx.font = '10px Segoe UI'; ctx.textAlign = 'center';
+  ctx.fillText('V₀', bx+bw/2, ty+bh/2+30);
+
+  const rx = x + w - 18 - 10, ry = ty + 10;
+  const rh = 28;
+  ctx.strokeStyle = '#5de6b0'; ctx.lineWidth = 2;
+  ctx.strokeRect(rx-8, ry, 16, rh);
+  ctx.fillStyle = '#8899bb'; ctx.font='10px Segoe UI'; ctx.textAlign='center';
+  ctx.fillText('R', rx, ry + rh + 12);
+
+  const capX = x + w - 18, capY = ty + bh/2;
+  ctx.strokeStyle = '#ffd166'; ctx.lineWidth = 2.5;
+  ctx.beginPath(); ctx.moveTo(capX-10, capY-6); ctx.lineTo(capX+10, capY-6); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(capX-10, capY+6); ctx.lineTo(capX+10, capY+6); ctx.stroke();
+  ctx.fillStyle = '#8899bb'; ctx.font='10px Segoe UI'; ctx.textAlign='left';
+  ctx.fillText('C', capX+13, capY+4);
+
+  const fillFrac = Math.min(Vc / V0, 1);
+  const capFillH = 10 * fillFrac;
+  ctx.fillStyle = `rgba(255,209,102,${0.3 + 0.5*fillFrac})`;
+  ctx.fillRect(capX-9, capY-6+1, 18, capFillH);
+  ctx.fillStyle = `rgba(79,124,255,${0.3 + 0.5*fillFrac})`;
+  ctx.fillRect(capX-9, capY+1, 18, capFillH);
+}
+
+function drawGraph(ctx, x, y, w, h, R, C, V0, tNow) {
+  const tau = R * C;
+  const tMax = 5.5 * tau;
+  const pad = {l:38, r:10, t:16, b:28};
+  const gx = x+pad.l, gy = y+pad.t, gw = w-pad.l-pad.r, gh = h-pad.t-pad.b;
+
+  ctx.fillStyle = '#0a0e1a';
+  ctx.fillRect(x, y, w, h);
+  ctx.strokeStyle = '#1e2a45'; ctx.lineWidth = 1;
+  ctx.strokeRect(gx, gy, gw, gh);
+
+  for (let i=0;i<=5;i++) {
+    const px = gx + (i/5)*gw;
+    ctx.strokeStyle='#1e2a4555'; ctx.lineWidth=1;
+    ctx.beginPath(); ctx.moveTo(px,gy); ctx.lineTo(px,gy+gh); ctx.stroke();
+    ctx.fillStyle='#8899bb'; ctx.font='9px Segoe UI'; ctx.textAlign='center';
+    ctx.fillText((i*tau).toFixed(2)+'s', px, gy+gh+14);
+  }
+  for (let i=0;i<=4;i++) {
+    const py = gy + gh - (i/4)*gh;
+    ctx.strokeStyle='#1e2a4555'; ctx.lineWidth=1;
+    ctx.beginPath(); ctx.moveTo(gx,py); ctx.lineTo(gx+gw,py); ctx.stroke();
+    ctx.fillStyle='#8899bb'; ctx.font='9px Segoe UI'; ctx.textAlign='right';
+    ctx.fillText((V0*i/4).toFixed(1), gx-4, py+3);
+  }
+
+  ctx.strokeStyle = '#4f7cff';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  let started = false;
+  for (let px=0; px<=gw; px++) {
+    const t = (px/gw)*tMax;
+    const v = Vc(t, R, C, V0);
+    const py = gy + gh - (v/V0)*gh;
+    if (!started) { ctx.moveTo(gx+px, py); started=true; }
+    else ctx.lineTo(gx+px, py);
+    if (t > tNow) break;
+  }
+  ctx.stroke();
+
+  const tauX = gx + (tau/tMax)*gw;
+  ctx.strokeStyle='#5de6b055'; ctx.lineWidth=1; ctx.setLineDash([3,3]);
+  ctx.beginPath(); ctx.moveTo(tauX,gy); ctx.lineTo(tauX,gy+gh); ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.fillStyle='#5de6b0'; ctx.font='9px Segoe UI'; ctx.textAlign='center';
+  ctx.fillText('τ', tauX, gy-4);
+
+  ctx.fillStyle='#ffd166'; ctx.font='10px Segoe UI'; ctx.textAlign='left';
+  ctx.fillText('V(t)', gx+4, gy+14);
+}
+
+let lastTime = null;
+function animate(ts) {
+  if (!lastTime) lastTime = ts;
+  const dt = (ts - lastTime) / 1000;
+  lastTime = ts;
+  const {R, C, V0} = getParams();
+  const tau = R * C;
+  animT += dt;
+  const tMax = 5.5 * tau;
+  if (animT > tMax) animT = tMax;
+
+  const vc = Vc(animT, R, C, V0);
+  const ic = Ic(animT, R, C, V0);
+  document.getElementById('hud-vc').textContent = vc.toFixed(3) + ' V';
+  document.getElementById('hud-i').textContent = (ic * 1000).toFixed(2) + ' mA';
+  document.getElementById('hud-tau').textContent = (tau * 1000).toFixed(1) + ' ms';
+
+  const W = canvas.clientWidth * (window.devicePixelRatio||1) || 360;
+  canvas.width = W; canvas.height = 320;
+  ctx.clearRect(0, 0, W, 320);
+
+  const circW = Math.min(140, W * 0.38);
+  drawCircuit(ctx, 8, 10, circW, 300, vc, V0, mode);
+  drawGraph(ctx, circW + 16, 10, W - circW - 24, 300, R, C, V0, animT);
+
+  if (animT < tMax) animId = requestAnimationFrame(animate);
+}
+
+function restart() {
+  if (animId) cancelAnimationFrame(animId);
+  animT = 0; lastTime = null;
+  animId = requestAnimationFrame(animate);
+}
+
+['res','cap','volt'].forEach(id => {
+  document.getElementById(id).addEventListener('input', () => { updateLabels(); restart(); });
+});
+
+updateLabels();
+restart();
+window.addEventListener('resize', restart);
+</script>
