@@ -1,0 +1,629 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Projectile Motion — Mere Teacher</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: #0a0e1a;
+    color: #e0e8ff;
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  header {
+    background: linear-gradient(135deg, #1a1f35, #0d1227);
+    border-bottom: 1px solid #2a3560;
+    padding: 12px 20px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  header .logo {
+    width: 32px; height: 32px;
+    background: linear-gradient(135deg, #4f7cff, #a855f7);
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px;
+  }
+
+  header h1 {
+    font-size: 15px;
+    font-weight: 600;
+    color: #c8d8ff;
+    letter-spacing: 0.3px;
+  }
+
+  header span {
+    font-size: 11px;
+    color: #6b7cb0;
+    margin-left: auto;
+    background: #1e2540;
+    padding: 3px 10px;
+    border-radius: 20px;
+    border: 1px solid #2a3560;
+  }
+
+  .canvas-wrap {
+    position: relative;
+    background: #080c18;
+    border-bottom: 1px solid #1e2540;
+  }
+
+  canvas {
+    display: block;
+    width: 100%;
+  }
+
+  /* ── HUD overlays ── */
+  .hud {
+    position: absolute;
+    top: 10px; left: 10px;
+    display: flex; gap: 8px; flex-wrap: wrap;
+  }
+
+  .hud-box {
+    background: rgba(10,14,26,0.82);
+    border: 1px solid #2a3560;
+    border-radius: 8px;
+    padding: 5px 10px;
+    font-size: 11px;
+    backdrop-filter: blur(4px);
+  }
+
+  .hud-box .label { color: #6b7cb0; font-size: 10px; }
+  .hud-box .value { color: #7eb8ff; font-weight: 700; font-size: 13px; }
+
+  /* ── Controls ── */
+  .controls {
+    padding: 16px 16px 8px;
+    background: #0d1122;
+  }
+
+  .control-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+
+  .control-item label {
+    display: block;
+    font-size: 11px;
+    color: #6b7cb0;
+    margin-bottom: 4px;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+  }
+
+  .control-item .val-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 4px;
+  }
+
+  .control-item .val-row span {
+    font-size: 14px;
+    font-weight: 700;
+    color: #7eb8ff;
+    min-width: 42px;
+  }
+
+  input[type=range] {
+    -webkit-appearance: none;
+    width: 100%;
+    height: 4px;
+    background: #1e2a50;
+    border-radius: 2px;
+    outline: none;
+  }
+
+  input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 16px; height: 16px;
+    background: linear-gradient(135deg, #4f7cff, #a855f7);
+    border-radius: 50%;
+    cursor: pointer;
+    box-shadow: 0 0 6px rgba(79,124,255,0.5);
+  }
+
+  /* ── Buttons ── */
+  .btn-row {
+    display: flex;
+    gap: 10px;
+    padding: 12px 16px;
+  }
+
+  button {
+    flex: 1;
+    padding: 11px;
+    border: none;
+    border-radius: 10px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: opacity 0.15s, transform 0.1s;
+    letter-spacing: 0.3px;
+  }
+
+  button:active { transform: scale(0.97); opacity: 0.85; }
+
+  #launchBtn {
+    background: linear-gradient(135deg, #4f7cff, #6e44cc);
+    color: #fff;
+  }
+
+  #resetBtn {
+    background: #1e2540;
+    color: #8899cc;
+    border: 1px solid #2a3560;
+  }
+
+  /* ── Formula card ── */
+  .formula-section {
+    margin: 0 16px 16px;
+    background: #0f1428;
+    border: 1px solid #1e2a50;
+    border-radius: 12px;
+    overflow: hidden;
+  }
+
+  .formula-section h3 {
+    font-size: 12px;
+    font-weight: 600;
+    color: #6b7cb0;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    padding: 10px 14px;
+    background: #0d1222;
+    border-bottom: 1px solid #1e2a50;
+  }
+
+  .formula-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0;
+  }
+
+  .formula-item {
+    padding: 10px 14px;
+    border-bottom: 1px solid #161e38;
+    border-right: 1px solid #161e38;
+  }
+
+  .formula-item:nth-child(even) { border-right: none; }
+  .formula-item:nth-last-child(-n+2) { border-bottom: none; }
+
+  .formula-item .f-label {
+    font-size: 10px;
+    color: #4f5e88;
+    margin-bottom: 3px;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+  }
+
+  .formula-item .f-eq {
+    font-size: 12px;
+    color: #a0c4ff;
+    font-family: 'Courier New', monospace;
+  }
+
+  .formula-item .f-val {
+    font-size: 13px;
+    font-weight: 700;
+    color: #5de6b0;
+    margin-top: 2px;
+  }
+
+  /* ── Key observations ── */
+  .obs-section {
+    margin: 0 16px 20px;
+    background: #0f1428;
+    border: 1px solid #1e2a50;
+    border-radius: 12px;
+    padding: 12px 14px;
+  }
+
+  .obs-section h3 {
+    font-size: 12px;
+    font-weight: 600;
+    color: #6b7cb0;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    margin-bottom: 10px;
+  }
+
+  .obs-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    margin-bottom: 7px;
+    font-size: 12px;
+    color: #8899cc;
+    line-height: 1.5;
+  }
+
+  .obs-item .dot {
+    width: 6px; height: 6px;
+    background: #4f7cff;
+    border-radius: 50%;
+    margin-top: 5px;
+    flex-shrink: 0;
+  }
+
+  .highlight { color: #7eb8ff; font-weight: 600; }
+
+  /* ── Trail & animation ── */
+  #statusBar {
+    text-align: center;
+    font-size: 11px;
+    color: #4f5e88;
+    padding: 4px;
+    letter-spacing: 0.5px;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">🎯</div>
+  <h1>Projectile Motion</h1>
+  <span>JEE Physics</span>
+</header>
+
+<div class="canvas-wrap">
+  <canvas id="c"></canvas>
+  <div class="hud">
+    <div class="hud-box">
+      <div class="label">Range</div>
+      <div class="value" id="hRange">— m</div>
+    </div>
+    <div class="hud-box">
+      <div class="label">Max Height</div>
+      <div class="value" id="hHeight">— m</div>
+    </div>
+    <div class="hud-box">
+      <div class="label">Time</div>
+      <div class="value" id="hTime">— s</div>
+    </div>
+  </div>
+  <div id="statusBar">Adjust parameters and press Launch</div>
+</div>
+
+<!-- Controls -->
+<div class="controls">
+  <div class="control-grid">
+    <div class="control-item">
+      <label>Initial Speed (u)</label>
+      <div class="val-row"><span id="vVal">20</span><small>m/s</small></div>
+      <input type="range" id="vSlider" min="5" max="50" value="20" step="1">
+    </div>
+    <div class="control-item">
+      <label>Launch Angle (θ)</label>
+      <div class="val-row"><span id="aVal">45</span><small>°</small></div>
+      <input type="range" id="aSlider" min="1" max="89" value="45" step="1">
+    </div>
+    <div class="control-item">
+      <label>Initial Height (h₀)</label>
+      <div class="val-row"><span id="hVal">0</span><small>m</small></div>
+      <input type="range" id="hSlider" min="0" max="30" value="0" step="1">
+    </div>
+    <div class="control-item">
+      <label>Gravity (g)</label>
+      <div class="val-row"><span id="gVal">10</span><small>m/s²</small></div>
+      <input type="range" id="gSlider" min="1" max="25" value="10" step="1">
+    </div>
+  </div>
+</div>
+
+<div class="btn-row">
+  <button id="launchBtn">▶ Launch</button>
+  <button id="resetBtn">↺ Reset</button>
+</div>
+
+<!-- Formula card -->
+<div class="formula-section">
+  <h3>Key Formulas & Live Values</h3>
+  <div class="formula-grid">
+    <div class="formula-item">
+      <div class="f-label">Horizontal Range</div>
+      <div class="f-eq">R = u²sin2θ / g</div>
+      <div class="f-val" id="fRange">—</div>
+    </div>
+    <div class="formula-item">
+      <div class="f-label">Max Height</div>
+      <div class="f-eq">H = u²sin²θ / 2g</div>
+      <div class="f-val" id="fHeight">—</div>
+    </div>
+    <div class="formula-item">
+      <div class="f-label">Time of Flight</div>
+      <div class="f-eq">T = 2u·sinθ / g</div>
+      <div class="f-val" id="fTime">—</div>
+    </div>
+    <div class="formula-item">
+      <div class="f-label">Velocity at top</div>
+      <div class="f-eq">v = u·cosθ</div>
+      <div class="f-val" id="fVtop">—</div>
+    </div>
+  </div>
+</div>
+
+<!-- Observations -->
+<div class="obs-section">
+  <h3>JEE Key Points</h3>
+  <div class="obs-item"><div class="dot"></div><span>Range is <span class="highlight">maximum at θ = 45°</span>. Complementary angles (e.g. 30° &amp; 60°) give the same range.</span></div>
+  <div class="obs-item"><div class="dot"></div><span>Horizontal velocity <span class="highlight">u·cosθ remains constant</span> throughout (no air resistance).</span></div>
+  <div class="obs-item"><div class="dot"></div><span>At maximum height, vertical velocity = 0. Only <span class="highlight">horizontal component survives</span>.</span></div>
+  <div class="obs-item"><div class="dot"></div><span>Trajectory equation: <span class="highlight">y = x·tanθ − gx²/2u²cos²θ</span> — a parabola.</span></div>
+</div>
+
+<script>
+const canvas = document.getElementById('c');
+const ctx    = canvas.getContext('2d');
+
+// ── Resize canvas ──────────────────────────────────────────────
+function resize() {
+  const w = canvas.parentElement.clientWidth;
+  const h = Math.min(w * 0.52, 280);
+  canvas.width  = w;
+  canvas.height = h;
+}
+resize();
+window.addEventListener('resize', () => { resize(); drawStatic(); });
+
+// ── Physics state ──────────────────────────────────────────────
+let u = 20, theta = 45, h0 = 0, g = 10;
+let animId = null;
+let trail  = [];
+let t_anim = 0, T_total = 0;
+let ballPos = null;
+let launched = false;
+
+// ── Helpers ──────────────────────────────────────────────────
+const RAD = Math.PI / 180;
+
+function physics() {
+  const rad = theta * RAD;
+  const ux  = u * Math.cos(rad);
+  const uy  = u * Math.sin(rad);
+  // T: solve h0 + uy*T - 0.5*g*T^2 = 0
+  const disc = uy * uy + 2 * g * h0;
+  const T = (uy + Math.sqrt(disc)) / g;
+  const R = ux * T;
+  const H = h0 + (uy * uy) / (2 * g);
+  return { T, R, H, ux, uy };
+}
+
+function updateFormulas() {
+  const { T, R, H, ux } = physics();
+  document.getElementById('fRange').textContent  = R.toFixed(2)  + ' m';
+  document.getElementById('fHeight').textContent = H.toFixed(2)  + ' m';
+  document.getElementById('fTime').textContent   = T.toFixed(2)  + ' s';
+  document.getElementById('fVtop').textContent   = ux.toFixed(2) + ' m/s';
+}
+
+// ── World → canvas mapping ─────────────────────────────────────
+function worldToCanvas(wx, wy, R, H_max) {
+  const W = canvas.width, H = canvas.height;
+  const padX = W * 0.08, padY = H * 0.12;
+  const drawW = W - 2 * padX;
+  const drawH = H - padY - H * 0.15;
+  const sx = padX + (wx / (R * 1.05)) * drawW;
+  const sy = (H - H * 0.15) - (wy / (H_max * 1.2 || 1)) * drawH;
+  return { sx, sy };
+}
+
+// ── Draw static scene ──────────────────────────────────────────
+function drawStatic(showTrail) {
+  const W = canvas.width, H = canvas.height;
+  ctx.clearRect(0, 0, W, H);
+
+  // Grid
+  ctx.strokeStyle = '#141c34';
+  ctx.lineWidth = 1;
+  for (let i = 0; i <= 10; i++) {
+    const x = W * 0.08 + (W * 0.84) * i / 10;
+    ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke();
+  }
+  for (let i = 0; i <= 6; i++) {
+    const y = H * 0.12 + (H * 0.73) * i / 6;
+    ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke();
+  }
+
+  // Ground
+  ctx.fillStyle = '#1e2a50';
+  ctx.fillRect(0, H - H * 0.15, W, H * 0.15);
+  ctx.strokeStyle = '#3a4e88';
+  ctx.lineWidth = 1.5;
+  ctx.beginPath(); ctx.moveTo(0, H - H * 0.15); ctx.lineTo(W, H - H * 0.15); ctx.stroke();
+
+  // Axis arrows
+  const orig = { sx: W * 0.08, sy: H - H * 0.15 };
+  ctx.strokeStyle = '#2a3a6a'; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(orig.sx, orig.sy - H * 0.6); ctx.lineTo(orig.sx, orig.sy + 5); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(orig.sx - 5, orig.sy); ctx.lineTo(W - 5, orig.sy); ctx.stroke();
+  ctx.fillStyle = '#3a4e88'; ctx.font = '9px sans-serif';
+  ctx.fillText('x', W - 14, orig.sy - 4);
+  ctx.fillText('y', orig.sx + 4, orig.sy - H * 0.6 + 5);
+
+  const { T, R, H: Hmax } = physics();
+
+  // Launch angle arc
+  const arcR = 22;
+  const rad = theta * RAD;
+  ctx.strokeStyle = '#4f7cff44'; ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  ctx.arc(orig.sx, orig.sy - h0 * (H * 0.73) / (Hmax * 1.2 + 1) || orig.sy,
+          arcR, -Math.PI, -rad - Math.PI, false);
+  // simpler: just show arc from 0
+  ctx.beginPath();
+  ctx.arc(orig.sx, orig.sy, arcR, -rad, 0);
+  ctx.stroke();
+  ctx.fillStyle = '#4f7cff99'; ctx.font = 'bold 10px sans-serif';
+  ctx.fillText(theta + '°', orig.sx + arcR + 2, orig.sy - 4);
+
+  // Dashed parabola (ghost)
+  if (R > 0) {
+    ctx.setLineDash([4, 4]);
+    ctx.strokeStyle = '#2a4080';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    const steps = 80;
+    for (let i = 0; i <= steps; i++) {
+      const ti = (i / steps) * T;
+      const wx = u * Math.cos(rad) * ti;
+      const wy = h0 + u * Math.sin(rad) * ti - 0.5 * g * ti * ti;
+      if (wy < 0) break;
+      const p = worldToCanvas(wx, wy, R, Hmax);
+      i === 0 ? ctx.moveTo(p.sx, p.sy) : ctx.lineTo(p.sx, p.sy);
+    }
+    ctx.stroke();
+    ctx.setLineDash([]);
+  }
+
+  // Trail
+  if (showTrail && trail.length > 1) {
+    ctx.beginPath();
+    ctx.strokeStyle = '#4f7cff';
+    ctx.lineWidth = 2;
+    trail.forEach((pt, i) => {
+      const p = worldToCanvas(pt.x, pt.y, R, Hmax);
+      i === 0 ? ctx.moveTo(p.sx, p.sy) : ctx.lineTo(p.sx, p.sy);
+    });
+    ctx.stroke();
+
+    // Glow dots every 10 pts
+    trail.forEach((pt, i) => {
+      if (i % 10 === 0) {
+        const p = worldToCanvas(pt.x, pt.y, R, Hmax);
+        ctx.beginPath();
+        ctx.arc(p.sx, p.sy, 2, 0, Math.PI * 2);
+        ctx.fillStyle = '#a0c4ff88';
+        ctx.fill();
+      }
+    });
+  }
+
+  // Ball
+  if (ballPos) {
+    const p = worldToCanvas(ballPos.x, ballPos.y, R, Hmax);
+    // glow
+    const grd = ctx.createRadialGradient(p.sx, p.sy, 0, p.sx, p.sy, 12);
+    grd.addColorStop(0, 'rgba(79,124,255,0.4)');
+    grd.addColorStop(1, 'rgba(79,124,255,0)');
+    ctx.beginPath(); ctx.arc(p.sx, p.sy, 12, 0, Math.PI * 2);
+    ctx.fillStyle = grd; ctx.fill();
+    // ball
+    ctx.beginPath(); ctx.arc(p.sx, p.sy, 5, 0, Math.PI * 2);
+    ctx.fillStyle = '#4f7cff'; ctx.fill();
+    ctx.strokeStyle = '#a0c4ff'; ctx.lineWidth = 1.5; ctx.stroke();
+
+    // velocity vector
+    const vx = u * Math.cos(rad);
+    const vy = u * Math.sin(rad) - g * t_anim;
+    const speed = Math.sqrt(vx * vx + vy * vy);
+    const scale = 20 / Math.max(speed, 1);
+    const ex = p.sx + vx * scale;
+    const ey = p.sy - vy * scale;
+    ctx.beginPath(); ctx.moveTo(p.sx, p.sy); ctx.lineTo(ex, ey);
+    ctx.strokeStyle = '#5de6b0'; ctx.lineWidth = 1.5; ctx.stroke();
+    // arrowhead
+    const angle = Math.atan2(ey - p.sy, ex - p.sx);
+    ctx.beginPath();
+    ctx.moveTo(ex, ey);
+    ctx.lineTo(ex - 7 * Math.cos(angle - 0.4), ey - 7 * Math.sin(angle - 0.4));
+    ctx.lineTo(ex - 7 * Math.cos(angle + 0.4), ey - 7 * Math.sin(angle + 0.4));
+    ctx.closePath();
+    ctx.fillStyle = '#5de6b0'; ctx.fill();
+  }
+
+  // Launch pin
+  {
+    const pinY = h0 > 0 ? orig.sy - h0 * (H * 0.73) / (Hmax * 1.2 + 1) : orig.sy;
+    ctx.beginPath(); ctx.arc(orig.sx, orig.sy, 5, 0, Math.PI * 2);
+    ctx.fillStyle = '#ff6b6b'; ctx.fill();
+  }
+}
+
+// ── Animation ─────────────────────────────────────────────────
+function animate() {
+  const { T, R, H: Hmax } = physics();
+  const rad = theta * RAD;
+  const dt = 0.016;
+  t_anim += dt;
+
+  if (t_anim > T) {
+    t_anim = T;
+    ballPos = { x: R, y: 0 };
+    drawStatic(true);
+    updateHUD(T, R, Hmax);
+    document.getElementById('statusBar').textContent = `Landed! Range = ${R.toFixed(1)} m`;
+    cancelAnimationFrame(animId);
+    return;
+  }
+
+  const wx = u * Math.cos(rad) * t_anim;
+  const wy = h0 + u * Math.sin(rad) * t_anim - 0.5 * g * t_anim * t_anim;
+  ballPos = { x: wx, y: Math.max(wy, 0) };
+  trail.push({ ...ballPos });
+
+  drawStatic(true);
+  updateHUD(t_anim, R, Hmax);
+  document.getElementById('statusBar').textContent =
+    `t = ${t_anim.toFixed(2)} s  |  x = ${wx.toFixed(1)} m  |  y = ${wy.toFixed(1)} m`;
+
+  animId = requestAnimationFrame(animate);
+}
+
+function updateHUD(t, R, Hmax) {
+  document.getElementById('hRange').textContent  = R.toFixed(1)    + ' m';
+  document.getElementById('hHeight').textContent = Hmax.toFixed(1) + ' m';
+  document.getElementById('hTime').textContent   = t.toFixed(2)    + ' s';
+}
+
+// ── Sliders ────────────────────────────────────────────────────
+function bindSlider(id, valId, setter) {
+  const sl = document.getElementById(id);
+  const vl = document.getElementById(valId);
+  sl.addEventListener('input', () => {
+    setter(parseFloat(sl.value));
+    vl.textContent = sl.value;
+    if (!launched) { drawStatic(false); updateFormulas(); }
+  });
+}
+
+bindSlider('vSlider', 'vVal', v => u = v);
+bindSlider('aSlider', 'aVal', v => theta = v);
+bindSlider('hSlider', 'hVal', v => h0 = v);
+bindSlider('gSlider', 'gVal', v => g = v);
+
+// ── Buttons ────────────────────────────────────────────────────
+document.getElementById('launchBtn').addEventListener('click', () => {
+  if (animId) cancelAnimationFrame(animId);
+  trail = []; t_anim = 0; ballPos = null; launched = true;
+  document.getElementById('statusBar').textContent = 'Launching…';
+  updateFormulas();
+  animate();
+});
+
+document.getElementById('resetBtn').addEventListener('click', () => {
+  if (animId) cancelAnimationFrame(animId);
+  trail = []; t_anim = 0; ballPos = null; launched = false;
+  document.getElementById('statusBar').textContent = 'Adjust parameters and press Launch';
+  document.getElementById('hRange').textContent  = '— m';
+  document.getElementById('hHeight').textContent = '— m';
+  document.getElementById('hTime').textContent   = '— s';
+  drawStatic(false);
+});
+
+// ── Init ───────────────────────────────────────────────────────
+updateFormulas();
+drawStatic(false);
+</script>
+</body>
+</html>
