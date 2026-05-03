@@ -1,0 +1,1148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Equations of Motion · Mere Teacher</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,600;9..144,800&family=JetBrains+Mono:wght@300;400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg-0: #060912;
+    --bg-1: #0c1220;
+    --bg-2: #131c31;
+    --ink-0: #eef2fa;
+    --ink-1: #8a97b2;
+    --ink-2: #4a5878;
+    --amber: #ffb347;
+    --amber-glow: #ff8c42;
+    --cyan: #5eead4;
+    --magenta: #f472b6;
+    --lime: #a3e635;
+    --grid: rgba(138, 151, 178, 0.08);
+    --panel: rgba(19, 28, 49, 0.55);
+    --border: rgba(138, 151, 178, 0.15);
+    --border-hot: rgba(255, 179, 71, 0.35);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+  html, body {
+    background: var(--bg-0);
+    color: var(--ink-0);
+    font-family: 'JetBrains Mono', monospace;
+    min-height: 100vh;
+    overflow-x: hidden;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* cosmic atmosphere */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background:
+      radial-gradient(ellipse at 15% 10%, rgba(255, 140, 66, 0.08), transparent 50%),
+      radial-gradient(ellipse at 85% 90%, rgba(94, 234, 212, 0.07), transparent 50%),
+      radial-gradient(ellipse at 50% 50%, rgba(244, 114, 182, 0.03), transparent 70%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* grid texture */
+  body::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(var(--grid) 1px, transparent 1px),
+      linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+    background-size: 60px 60px;
+    pointer-events: none;
+    z-index: 0;
+    mask-image: radial-gradient(ellipse at center, black 30%, transparent 80%);
+  }
+
+  .app {
+    position: relative;
+    z-index: 1;
+    max-width: 1440px;
+    margin: 0 auto;
+    padding: 24px;
+    min-height: 100vh;
+  }
+
+  /* ===== HEADER ===== */
+  .header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    padding-bottom: 18px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 24px;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+
+  .brand {
+    display: flex;
+    align-items: baseline;
+    gap: 14px;
+  }
+
+  .brand-mark {
+    font-family: 'Fraunces', serif;
+    font-weight: 800;
+    font-size: 28px;
+    letter-spacing: -0.02em;
+    color: var(--ink-0);
+  }
+
+  .brand-mark em {
+    font-style: italic;
+    color: var(--amber);
+    font-weight: 300;
+  }
+
+  .brand-sub {
+    font-size: 10px;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    color: var(--ink-2);
+  }
+
+  .meta {
+    font-size: 10px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--ink-2);
+    display: flex;
+    gap: 20px;
+  }
+
+  .meta-live::before {
+    content: '●';
+    color: var(--lime);
+    margin-right: 6px;
+    animation: pulse 2s ease-in-out infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.3; }
+  }
+
+  /* ===== LAYOUT ===== */
+  .grid {
+    display: grid;
+    grid-template-columns: 1.3fr 1fr;
+    gap: 20px;
+  }
+
+  @media (max-width: 900px) {
+    .grid { grid-template-columns: 1fr; }
+    .app { padding: 16px; }
+    .header { margin-bottom: 16px; }
+    .brand-mark { font-size: 22px; }
+  }
+
+  /* ===== PANEL BASE ===== */
+  .panel {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 20px;
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    position: relative;
+  }
+
+  .panel-label {
+    font-size: 10px;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    color: var(--ink-2);
+    margin-bottom: 14px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .panel-label span:last-child {
+    color: var(--ink-1);
+    font-size: 9px;
+  }
+
+  /* ===== STAGE (motion animation) ===== */
+  .stage-wrap {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  .stage {
+    height: 260px;
+    position: relative;
+    overflow: hidden;
+    padding: 0;
+  }
+
+  @media (max-width: 900px) {
+    .stage { height: 200px; }
+  }
+
+  .stage-canvas {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+  }
+
+  .stage-readout {
+    position: absolute;
+    top: 16px;
+    left: 16px;
+    right: 16px;
+    display: flex;
+    justify-content: space-between;
+    pointer-events: none;
+    z-index: 2;
+    font-size: 10px;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    color: var(--ink-2);
+  }
+
+  /* ===== GRAPH ===== */
+  .graph-panel {
+    padding: 20px;
+  }
+
+  .graph-canvas {
+    width: 100%;
+    height: 180px;
+    display: block;
+  }
+
+  @media (max-width: 900px) {
+    .graph-canvas { height: 140px; }
+  }
+
+  /* ===== CONTROLS ===== */
+  .controls-wrap {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  .controls {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  .slider-group {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .slider-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+  }
+
+  .slider-label {
+    font-size: 11px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--ink-1);
+  }
+
+  .slider-label .var {
+    font-family: 'Fraunces', serif;
+    font-style: italic;
+    color: var(--amber);
+    font-size: 16px;
+    margin-right: 6px;
+    letter-spacing: 0;
+  }
+
+  .slider-value {
+    font-size: 18px;
+    font-weight: 500;
+    color: var(--ink-0);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .slider-value .unit {
+    color: var(--ink-2);
+    font-size: 10px;
+    margin-left: 4px;
+    letter-spacing: 0.1em;
+  }
+
+  /* native slider restyle */
+  input[type="range"] {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 100%;
+    height: 36px;
+    background: transparent;
+    cursor: pointer;
+    margin: 0;
+  }
+
+  input[type="range"]::-webkit-slider-runnable-track {
+    height: 2px;
+    background: linear-gradient(to right, var(--ink-2) 0%, var(--ink-2) 100%);
+    border-radius: 1px;
+  }
+
+  input[type="range"]::-moz-range-track {
+    height: 2px;
+    background: var(--ink-2);
+    border-radius: 1px;
+  }
+
+  input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 22px;
+    height: 22px;
+    background: var(--amber);
+    border: 3px solid var(--bg-0);
+    border-radius: 50%;
+    margin-top: -10px;
+    box-shadow: 0 0 18px var(--amber-glow), 0 0 0 1px var(--amber);
+    transition: transform 0.15s ease;
+  }
+
+  input[type="range"]::-webkit-slider-thumb:hover {
+    transform: scale(1.15);
+  }
+
+  input[type="range"]::-moz-range-thumb {
+    width: 22px;
+    height: 22px;
+    background: var(--amber);
+    border: 3px solid var(--bg-0);
+    border-radius: 50%;
+    box-shadow: 0 0 18px var(--amber-glow);
+  }
+
+  .slider-track-markers {
+    display: flex;
+    justify-content: space-between;
+    font-size: 9px;
+    color: var(--ink-2);
+    margin-top: -4px;
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* ===== BUTTONS ===== */
+  .button-row {
+    display: flex;
+    gap: 10px;
+    margin-top: 4px;
+  }
+
+  .btn {
+    flex: 1;
+    background: var(--bg-2);
+    border: 1px solid var(--border);
+    color: var(--ink-0);
+    padding: 14px 18px;
+    font-family: inherit;
+    font-size: 11px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    font-weight: 500;
+    cursor: pointer;
+    border-radius: 4px;
+    transition: all 0.2s ease;
+    position: relative;
+  }
+
+  .btn:hover {
+    border-color: var(--ink-1);
+    color: var(--amber);
+  }
+
+  .btn-primary {
+    background: linear-gradient(135deg, var(--amber), var(--amber-glow));
+    color: var(--bg-0);
+    border-color: var(--amber);
+    font-weight: 700;
+    box-shadow: 0 0 24px rgba(255, 179, 71, 0.25);
+  }
+
+  .btn-primary:hover {
+    color: var(--bg-0);
+    transform: translateY(-1px);
+    box-shadow: 0 0 32px rgba(255, 179, 71, 0.4);
+  }
+
+  /* ===== OUTPUTS ===== */
+  .outputs {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-top: 8px;
+  }
+
+  .output {
+    background: var(--bg-1);
+    border: 1px solid var(--border);
+    border-left: 2px solid var(--cyan);
+    padding: 14px 16px;
+    border-radius: 4px;
+  }
+
+  .output.acc { border-left-color: var(--magenta); }
+
+  .output-label {
+    font-size: 9px;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    color: var(--ink-2);
+    margin-bottom: 6px;
+  }
+
+  .output-value {
+    font-family: 'Fraunces', serif;
+    font-size: 26px;
+    font-weight: 600;
+    color: var(--ink-0);
+    font-variant-numeric: tabular-nums;
+    line-height: 1;
+  }
+
+  .output-value .unit {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--ink-1);
+    font-weight: 400;
+    margin-left: 4px;
+  }
+
+  /* ===== EQUATIONS ===== */
+  .eqn-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .eqn {
+    background: var(--bg-1);
+    border: 1px solid var(--border);
+    padding: 14px 16px;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    cursor: pointer;
+    transition: all 0.25s ease;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .eqn:hover {
+    border-color: var(--ink-2);
+  }
+
+  .eqn.active {
+    border-color: var(--amber);
+    background: linear-gradient(135deg, rgba(255, 179, 71, 0.08), rgba(255, 140, 66, 0.02));
+    box-shadow: 0 0 0 1px var(--amber), 0 0 24px rgba(255, 179, 71, 0.15);
+  }
+
+  .eqn.active::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 3px;
+    background: var(--amber);
+    box-shadow: 0 0 12px var(--amber);
+  }
+
+  .eqn-num {
+    font-size: 10px;
+    color: var(--ink-2);
+    letter-spacing: 0.1em;
+    min-width: 20px;
+  }
+
+  .eqn.active .eqn-num { color: var(--amber); }
+
+  .eqn-math {
+    font-family: 'Fraunces', serif;
+    font-size: 20px;
+    font-weight: 400;
+    font-style: italic;
+    letter-spacing: 0.02em;
+    flex: 1;
+  }
+
+  .eqn-math .op { font-style: normal; color: var(--ink-1); margin: 0 4px; }
+  .eqn-math .sup { font-size: 0.7em; vertical-align: super; }
+  .eqn-math .frac { font-size: 0.9em; }
+
+  .eqn-result {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--cyan);
+    font-variant-numeric: tabular-nums;
+    text-align: right;
+    min-width: 80px;
+    letter-spacing: 0.02em;
+  }
+
+  .eqn.active .eqn-result { color: var(--amber); }
+
+  .eqn-variable {
+    transition: all 0.2s ease;
+    display: inline-block;
+  }
+
+  .eqn.pulse .eqn-variable {
+    animation: varPulse 0.6s ease;
+  }
+
+  @keyframes varPulse {
+    0% { color: inherit; transform: scale(1); }
+    50% { color: var(--amber); transform: scale(1.15); text-shadow: 0 0 12px var(--amber); }
+    100% { color: inherit; transform: scale(1); }
+  }
+
+  /* ===== SCRUB BAR ===== */
+  .scrub-wrap {
+    margin-top: 4px;
+  }
+
+  .scrub-label {
+    display: flex;
+    justify-content: space-between;
+    font-size: 10px;
+    color: var(--ink-2);
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+
+  .scrub-label .current {
+    color: var(--amber);
+    font-weight: 500;
+  }
+
+  .scrub-bar {
+    height: 4px;
+    background: var(--bg-2);
+    border-radius: 2px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .scrub-fill {
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    background: linear-gradient(to right, var(--amber), var(--amber-glow));
+    box-shadow: 0 0 12px var(--amber-glow);
+    width: 0%;
+    transition: width 0.05s linear;
+  }
+
+  /* ===== FOOTER ===== */
+  .footer {
+    margin-top: 20px;
+    padding-top: 16px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    font-size: 9px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--ink-2);
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+</style>
+</head>
+<body>
+
+<div class="app">
+
+  <!-- ============ HEADER ============ -->
+  <header class="header">
+    <div class="brand">
+      <div class="brand-mark">Mere<em>Teacher</em></div>
+      <div class="brand-sub">// Kinematics Lab 01</div>
+    </div>
+    <div class="meta">
+      <span class="meta-live">Live Simulation</span>
+      <span>1D Motion · Constant a</span>
+    </div>
+  </header>
+
+  <!-- ============ MAIN GRID ============ -->
+  <div class="grid">
+
+    <!-- ===== LEFT: STAGE + GRAPH ===== -->
+    <div class="stage-wrap">
+
+      <div class="panel stage">
+        <div class="stage-readout">
+          <span>Motion · Frame 001</span>
+          <span id="stageStatus">Standby</span>
+        </div>
+        <canvas class="stage-canvas" id="stageCanvas"></canvas>
+      </div>
+
+      <div class="panel graph-panel">
+        <div class="panel-label">
+          <span>Position — Time</span>
+          <span>x(t) vs t</span>
+        </div>
+        <canvas class="graph-canvas" id="graphCanvas"></canvas>
+      </div>
+
+      <!-- OUTPUTS -->
+      <div class="outputs">
+        <div class="output">
+          <div class="output-label">Final Velocity · v</div>
+          <div class="output-value" id="outV">0.00<span class="unit">m/s</span></div>
+        </div>
+        <div class="output acc">
+          <div class="output-label">Displacement · s</div>
+          <div class="output-value" id="outS">0.00<span class="unit">m</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== RIGHT: CONTROLS + EQUATIONS ===== -->
+    <div class="controls-wrap">
+
+      <div class="panel">
+        <div class="panel-label">
+          <span>Input Parameters</span>
+          <span>SI Units</span>
+        </div>
+
+        <div class="controls">
+          <!-- u -->
+          <div class="slider-group">
+            <div class="slider-head">
+              <span class="slider-label"><span class="var">u</span>Initial Velocity</span>
+              <span class="slider-value" id="uVal">5<span class="unit">m/s</span></span>
+            </div>
+            <input type="range" id="uSlider" min="-20" max="20" step="0.5" value="5">
+            <div class="slider-track-markers"><span>-20</span><span>0</span><span>+20</span></div>
+          </div>
+
+          <!-- a -->
+          <div class="slider-group">
+            <div class="slider-head">
+              <span class="slider-label"><span class="var">a</span>Acceleration</span>
+              <span class="slider-value" id="aVal">2<span class="unit">m/s²</span></span>
+            </div>
+            <input type="range" id="aSlider" min="-10" max="10" step="0.25" value="2">
+            <div class="slider-track-markers"><span>-10</span><span>0</span><span>+10</span></div>
+          </div>
+
+          <!-- t -->
+          <div class="slider-group">
+            <div class="slider-head">
+              <span class="slider-label"><span class="var">t</span>Duration</span>
+              <span class="slider-value" id="tVal">5<span class="unit">s</span></span>
+            </div>
+            <input type="range" id="tSlider" min="1" max="10" step="0.5" value="5">
+            <div class="slider-track-markers"><span>1</span><span>5</span><span>10</span></div>
+          </div>
+
+          <!-- scrub -->
+          <div class="scrub-wrap">
+            <div class="scrub-label">
+              <span>Elapsed</span>
+              <span class="current"><span id="elapsedVal">0.00</span> / <span id="totalVal">5.00</span> s</span>
+            </div>
+            <div class="scrub-bar">
+              <div class="scrub-fill" id="scrubFill"></div>
+            </div>
+          </div>
+
+          <div class="button-row">
+            <button class="btn btn-primary" id="playBtn">▶ Play</button>
+            <button class="btn" id="resetBtn">↺ Reset</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-label">
+          <span>Equations of Motion</span>
+          <span>Tap to highlight</span>
+        </div>
+
+        <div class="eqn-list" id="eqnList">
+          <div class="eqn active" data-eq="1">
+            <span class="eqn-num">01</span>
+            <span class="eqn-math">
+              <span class="eqn-variable" data-v="v">v</span>
+              <span class="op">=</span>
+              <span class="eqn-variable" data-v="u">u</span>
+              <span class="op">+</span>
+              <span class="eqn-variable" data-v="a">a</span><span class="eqn-variable" data-v="t">t</span>
+            </span>
+            <span class="eqn-result" id="eqRes1">v = 15.00</span>
+          </div>
+
+          <div class="eqn" data-eq="2">
+            <span class="eqn-num">02</span>
+            <span class="eqn-math">
+              <span class="eqn-variable" data-v="s">s</span>
+              <span class="op">=</span>
+              <span class="eqn-variable" data-v="u">u</span><span class="eqn-variable" data-v="t">t</span>
+              <span class="op">+</span>
+              <span class="frac">½</span>
+              <span class="eqn-variable" data-v="a">a</span><span class="eqn-variable" data-v="t">t</span><span class="sup">2</span>
+            </span>
+            <span class="eqn-result" id="eqRes2">s = 50.00</span>
+          </div>
+
+          <div class="eqn" data-eq="3">
+            <span class="eqn-math" style="padding-left:0;">
+              <span class="eqn-num" style="margin-right:14px;">03</span>
+              <span class="eqn-variable" data-v="v">v</span><span class="sup">2</span>
+              <span class="op">=</span>
+              <span class="eqn-variable" data-v="u">u</span><span class="sup">2</span>
+              <span class="op">+</span>
+              2<span class="eqn-variable" data-v="a">a</span><span class="eqn-variable" data-v="s">s</span>
+            </span>
+            <span class="eqn-result" id="eqRes3">v² = 225</span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ============ FOOTER ============ -->
+  <footer class="footer">
+    <span>Lab 01 · Motion in a Straight Line</span>
+    <span>Concept → Equation → Visual</span>
+  </footer>
+
+</div>
+
+<script>
+/* ================================================================
+   EQUATIONS OF MOTION — SIMULATION ENGINE
+   ================================================================ */
+
+const state = {
+  u: 5,          // initial velocity
+  a: 2,          // acceleration
+  tTotal: 5,     // total sim time (s)
+  t: 0,          // elapsed sim time (s)
+  playing: false,
+  lastRAF: 0,
+  trail: [],     // {t, x} samples for graph + stamps
+  activeEq: 1
+};
+
+const $ = id => document.getElementById(id);
+const stageCanvas = $('stageCanvas');
+const graphCanvas = $('graphCanvas');
+const sctx = stageCanvas.getContext('2d');
+const gctx = graphCanvas.getContext('2d');
+
+/* --- HiDPI handling --- */
+function fitCanvas(canvas, ctx) {
+  const dpr = window.devicePixelRatio || 1;
+  const rect = canvas.getBoundingClientRect();
+  canvas.width = rect.width * dpr;
+  canvas.height = rect.height * dpr;
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  return { w: rect.width, h: rect.height };
+}
+
+/* --- Physics --- */
+function posAt(t) { return state.u * t + 0.5 * state.a * t * t; }
+function velAt(t) { return state.u + state.a * t; }
+
+/* --- Scale mapping for stage --- */
+function getStageScale(w) {
+  // find max |x| over full duration to auto-fit
+  const samples = [0, state.tTotal / 2, state.tTotal];
+  let maxAbs = 1;
+  for (const t of samples) maxAbs = Math.max(maxAbs, Math.abs(posAt(t)));
+  // also check turnaround if u and a have opposite signs
+  if (state.u * state.a < 0) {
+    const tTurn = -state.u / state.a;
+    if (tTurn > 0 && tTurn < state.tTotal) {
+      maxAbs = Math.max(maxAbs, Math.abs(posAt(tTurn)));
+    }
+  }
+  const halfWidth = (w * 0.44);
+  return halfWidth / maxAbs;
+}
+
+/* ================================================================
+   STAGE RENDER
+   ================================================================ */
+function drawStage() {
+  const { w, h } = fitCanvas(stageCanvas, sctx);
+  sctx.clearRect(0, 0, w, h);
+
+  const cy = h / 2;
+  const cx = w / 2;
+  const scale = getStageScale(w);
+
+  // ---- TRACK ----
+  // outer dim line
+  sctx.strokeStyle = 'rgba(138, 151, 178, 0.15)';
+  sctx.lineWidth = 1;
+  sctx.beginPath();
+  sctx.moveTo(24, cy);
+  sctx.lineTo(w - 24, cy);
+  sctx.stroke();
+
+  // tick marks every meter
+  const maxX = (w / 2 - 24) / scale;
+  sctx.fillStyle = 'rgba(138, 151, 178, 0.3)';
+  sctx.font = '9px "JetBrains Mono", monospace';
+  sctx.textAlign = 'center';
+  const tickStep = Math.max(1, Math.round(maxX / 8));
+  for (let m = -Math.floor(maxX); m <= Math.floor(maxX); m += tickStep) {
+    const x = cx + m * scale;
+    if (x < 20 || x > w - 20) continue;
+    sctx.fillRect(x, cy - 4, 1, 8);
+    if (m !== 0) {
+      sctx.fillText(m, x, cy + 20);
+    }
+  }
+  // origin label
+  sctx.fillStyle = 'rgba(255, 179, 71, 0.5)';
+  sctx.fillText('0', cx, cy + 20);
+  sctx.beginPath();
+  sctx.arc(cx, cy, 3, 0, Math.PI * 2);
+  sctx.fill();
+
+  // ---- TRAIL STAMPS (show particle position every 0.25s up to current t) ----
+  const stampInterval = state.tTotal / 20;
+  for (let tt = 0; tt <= state.t; tt += stampInterval) {
+    const xm = posAt(tt);
+    const xp = cx + xm * scale;
+    const age = (state.t - tt) / state.tTotal;
+    const alpha = 0.15 + (1 - age) * 0.35;
+    sctx.fillStyle = `rgba(94, 234, 212, ${alpha})`;
+    sctx.beginPath();
+    sctx.arc(xp, cy, 3, 0, Math.PI * 2);
+    sctx.fill();
+  }
+
+  // ---- PARTICLE ----
+  const xMeters = posAt(state.t);
+  const px = cx + xMeters * scale;
+  const vNow = velAt(state.t);
+
+  // glow halo
+  const grad = sctx.createRadialGradient(px, cy, 0, px, cy, 30);
+  grad.addColorStop(0, 'rgba(255, 179, 71, 0.6)');
+  grad.addColorStop(0.5, 'rgba(255, 140, 66, 0.2)');
+  grad.addColorStop(1, 'rgba(255, 140, 66, 0)');
+  sctx.fillStyle = grad;
+  sctx.beginPath();
+  sctx.arc(px, cy, 30, 0, Math.PI * 2);
+  sctx.fill();
+
+  // core
+  sctx.fillStyle = '#ffb347';
+  sctx.beginPath();
+  sctx.arc(px, cy, 8, 0, Math.PI * 2);
+  sctx.fill();
+
+  sctx.fillStyle = '#fff6e6';
+  sctx.beginPath();
+  sctx.arc(px, cy, 3, 0, Math.PI * 2);
+  sctx.fill();
+
+  // velocity arrow
+  if (Math.abs(vNow) > 0.1) {
+    const arrowLen = Math.min(60, Math.abs(vNow) * 2.5);
+    const dir = Math.sign(vNow);
+    const ax = px + dir * arrowLen;
+    sctx.strokeStyle = '#5eead4';
+    sctx.lineWidth = 2;
+    sctx.beginPath();
+    sctx.moveTo(px + dir * 14, cy - 22);
+    sctx.lineTo(ax, cy - 22);
+    sctx.stroke();
+    // arrowhead
+    sctx.fillStyle = '#5eead4';
+    sctx.beginPath();
+    sctx.moveTo(ax, cy - 22);
+    sctx.lineTo(ax - dir * 7, cy - 26);
+    sctx.lineTo(ax - dir * 7, cy - 18);
+    sctx.closePath();
+    sctx.fill();
+    // v label
+    sctx.font = 'italic 11px "Fraunces", serif';
+    sctx.fillStyle = '#5eead4';
+    sctx.textAlign = dir > 0 ? 'left' : 'right';
+    sctx.fillText(`v = ${vNow.toFixed(1)} m/s`, px + dir * 14, cy - 32);
+  }
+
+  // position label above particle
+  sctx.font = '10px "JetBrains Mono", monospace';
+  sctx.fillStyle = '#ffb347';
+  sctx.textAlign = 'center';
+  sctx.fillText(`x = ${xMeters.toFixed(2)} m`, px, cy + 38);
+}
+
+/* ================================================================
+   GRAPH RENDER (x-t)
+   ================================================================ */
+function drawGraph() {
+  const { w, h } = fitCanvas(graphCanvas, gctx);
+  gctx.clearRect(0, 0, w, h);
+
+  const padL = 36, padR = 12, padT = 10, padB = 22;
+  const gw = w - padL - padR;
+  const gh = h - padT - padB;
+
+  // compute x range across full duration for fixed axes
+  let xMin = 0, xMax = 0;
+  const steps = 60;
+  for (let i = 0; i <= steps; i++) {
+    const tt = (i / steps) * state.tTotal;
+    const x = posAt(tt);
+    if (x < xMin) xMin = x;
+    if (x > xMax) xMax = x;
+  }
+  // add padding
+  const range = Math.max(1, xMax - xMin);
+  xMin -= range * 0.08;
+  xMax += range * 0.08;
+  const yRange = xMax - xMin;
+
+  const tToPx = t => padL + (t / state.tTotal) * gw;
+  const xToPy = x => padT + (1 - (x - xMin) / yRange) * gh;
+
+  // grid
+  gctx.strokeStyle = 'rgba(138, 151, 178, 0.08)';
+  gctx.lineWidth = 1;
+  for (let i = 0; i <= 5; i++) {
+    const gx = padL + (i / 5) * gw;
+    gctx.beginPath(); gctx.moveTo(gx, padT); gctx.lineTo(gx, padT + gh); gctx.stroke();
+  }
+  for (let i = 0; i <= 4; i++) {
+    const gy = padT + (i / 4) * gh;
+    gctx.beginPath(); gctx.moveTo(padL, gy); gctx.lineTo(padL + gw, gy); gctx.stroke();
+  }
+
+  // axes
+  gctx.strokeStyle = 'rgba(138, 151, 178, 0.3)';
+  gctx.lineWidth = 1;
+  // x-axis (at x=0 if in range, else bottom)
+  const zeroY = (xMin <= 0 && xMax >= 0) ? xToPy(0) : padT + gh;
+  gctx.beginPath(); gctx.moveTo(padL, zeroY); gctx.lineTo(padL + gw, zeroY); gctx.stroke();
+  gctx.beginPath(); gctx.moveTo(padL, padT); gctx.lineTo(padL, padT + gh); gctx.stroke();
+
+  // axis labels
+  gctx.fillStyle = 'rgba(138, 151, 178, 0.7)';
+  gctx.font = '9px "JetBrains Mono", monospace';
+  gctx.textAlign = 'right';
+  gctx.fillText(xMax.toFixed(0), padL - 4, padT + 8);
+  gctx.fillText(xMin.toFixed(0), padL - 4, padT + gh);
+  gctx.textAlign = 'center';
+  gctx.fillText('t →', padL + gw / 2, padT + gh + 16);
+  gctx.save();
+  gctx.translate(12, padT + gh / 2);
+  gctx.rotate(-Math.PI / 2);
+  gctx.fillText('x (m)', 0, 0);
+  gctx.restore();
+
+  // full curve (faded)
+  gctx.strokeStyle = 'rgba(94, 234, 212, 0.2)';
+  gctx.lineWidth = 1.5;
+  gctx.beginPath();
+  for (let i = 0; i <= steps; i++) {
+    const tt = (i / steps) * state.tTotal;
+    const px = tToPx(tt), py = xToPy(posAt(tt));
+    if (i === 0) gctx.moveTo(px, py); else gctx.lineTo(px, py);
+  }
+  gctx.stroke();
+
+  // traced portion (bright)
+  gctx.strokeStyle = '#5eead4';
+  gctx.lineWidth = 2;
+  gctx.shadowColor = '#5eead4';
+  gctx.shadowBlur = 8;
+  gctx.beginPath();
+  const tracedSteps = Math.max(2, Math.floor((state.t / state.tTotal) * steps));
+  for (let i = 0; i <= tracedSteps; i++) {
+    const tt = (i / steps) * state.tTotal;
+    if (tt > state.t) break;
+    const px = tToPx(tt), py = xToPy(posAt(tt));
+    if (i === 0) gctx.moveTo(px, py); else gctx.lineTo(px, py);
+  }
+  // connect to exact current point
+  gctx.lineTo(tToPx(state.t), xToPy(posAt(state.t)));
+  gctx.stroke();
+  gctx.shadowBlur = 0;
+
+  // current point dot
+  const cpx = tToPx(state.t), cpy = xToPy(posAt(state.t));
+  gctx.fillStyle = '#ffb347';
+  gctx.shadowColor = '#ff8c42';
+  gctx.shadowBlur = 12;
+  gctx.beginPath();
+  gctx.arc(cpx, cpy, 5, 0, Math.PI * 2);
+  gctx.fill();
+  gctx.shadowBlur = 0;
+}
+
+/* ================================================================
+   EQUATION UPDATES
+   ================================================================ */
+function updateReadouts() {
+  const v = velAt(state.t);
+  const s = posAt(state.t);
+  $('outV').innerHTML = `${v.toFixed(2)}<span class="unit">m/s</span>`;
+  $('outS').innerHTML = `${s.toFixed(2)}<span class="unit">m</span>`;
+
+  // final values (at end of duration)
+  const vFinal = velAt(state.tTotal);
+  const sFinal = posAt(state.tTotal);
+  const v2 = state.u * state.u + 2 * state.a * sFinal;
+
+  $('eqRes1').textContent = `= ${vFinal.toFixed(2)} m/s`;
+  $('eqRes2').textContent = `= ${sFinal.toFixed(2)} m`;
+  $('eqRes3').textContent = `= ${v2.toFixed(2)}`;
+
+  // scrub
+  const pct = (state.t / state.tTotal) * 100;
+  $('scrubFill').style.width = pct + '%';
+  $('elapsedVal').textContent = state.t.toFixed(2);
+  $('totalVal').textContent = state.tTotal.toFixed(2);
+}
+
+/* ================================================================
+   ANIMATION LOOP
+   ================================================================ */
+function loop(ts) {
+  if (!state.playing) return;
+  if (!state.lastRAF) state.lastRAF = ts;
+  const dt = (ts - state.lastRAF) / 1000;
+  state.lastRAF = ts;
+
+  state.t += dt;
+  if (state.t >= state.tTotal) {
+    state.t = state.tTotal;
+    state.playing = false;
+    $('playBtn').innerHTML = '▶ Replay';
+    $('stageStatus').textContent = 'Complete';
+  }
+
+  drawStage();
+  drawGraph();
+  updateReadouts();
+
+  if (state.playing) requestAnimationFrame(loop);
+}
+
+function play() {
+  if (state.t >= state.tTotal) state.t = 0;
+  state.playing = true;
+  state.lastRAF = 0;
+  $('playBtn').innerHTML = '❚❚ Pause';
+  $('stageStatus').textContent = 'Running';
+  requestAnimationFrame(loop);
+}
+
+function pause() {
+  state.playing = false;
+  $('playBtn').innerHTML = '▶ Play';
+  $('stageStatus').textContent = 'Paused';
+}
+
+function reset() {
+  state.playing = false;
+  state.t = 0;
+  $('playBtn').innerHTML = '▶ Play';
+  $('stageStatus').textContent = 'Standby';
+  drawStage();
+  drawGraph();
+  updateReadouts();
+}
+
+/* ================================================================
+   CONTROLS WIRING
+   ================================================================ */
+function bindSlider(id, valId, onUpdate, unit) {
+  const el = $(id), val = $(valId);
+  el.addEventListener('input', () => {
+    const v = parseFloat(el.value);
+    val.innerHTML = `${v}<span class="unit">${unit}</span>`;
+    onUpdate(v);
+    drawStage();
+    drawGraph();
+    updateReadouts();
+    pulseVariable(id);
+  });
+}
+
+function pulseVariable(sliderId) {
+  const map = { uSlider: 'u', aSlider: 'a', tSlider: 't' };
+  const v = map[sliderId];
+  if (!v) return;
+  document.querySelectorAll(`.eqn-variable[data-v="${v}"]`).forEach(el => {
+    el.style.color = 'var(--amber)';
+    el.style.textShadow = '0 0 12px var(--amber)';
+    el.style.transform = 'scale(1.15)';
+    setTimeout(() => {
+      el.style.color = '';
+      el.style.textShadow = '';
+      el.style.transform = '';
+    }, 400);
+  });
+}
+
+bindSlider('uSlider', 'uVal', v => state.u = v, 'm/s');
+bindSlider('aSlider', 'aVal', v => state.a = v, 'm/s²');
+bindSlider('tSlider', 'tVal', v => {
+  state.tTotal = v;
+  if (state.t > state.tTotal) state.t = state.tTotal;
+}, 's');
+
+$('playBtn').addEventListener('click', () => {
+  state.playing ? pause() : play();
+});
+$('resetBtn').addEventListener('click', reset);
+
+// equation toggle
+document.querySelectorAll('.eqn').forEach(el => {
+  el.addEventListener('click', () => {
+    document.querySelectorAll('.eqn').forEach(e => e.classList.remove('active'));
+    el.classList.add('active');
+    state.activeEq = parseInt(el.dataset.eq);
+  });
+});
+
+// initial render + on resize
+function initialRender() {
+  drawStage();
+  drawGraph();
+  updateReadouts();
+}
+window.addEventListener('resize', initialRender);
+initialRender();
+
+</script>
+</body>
+</html>
